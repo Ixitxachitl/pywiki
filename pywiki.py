@@ -118,10 +118,10 @@ class Bot(commands.Bot):
 
     @commands.command()
     async def ai(self, ctx: commands.Context):
-        completion = openai.Completion.create(max_tokens = 128, engine="text-davinci-001", prompt=ctx.message.content.split(' ', 1)[1])
-        print(self.nick + ': ' + completion.choices[0].text)
-        await ctx.send(completion.choices[0].text[:500])
-            
+        completion = openai.Completion.create(max_tokens = 128, engine='text-davinci-001', prompt=ctx.message.content.split(' ', 1)[1])
+        print(self.nick + ': ' + completion.choices[0].text.strip())
+        await ctx.send(completion.choices[0].text.strip()[:500])
+
     @commands.command()
     async def define(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -132,7 +132,7 @@ class Bot(commands.Bot):
         definition = str(r[0]['shortdef'][0])
         print(self.nick + ': ' + definition)
         await ctx.send(definition[:500])
-    
+            
     @commands.command()
     async def reddit(self, ctx: commands.Context):
         config = configparser.ConfigParser()
