@@ -169,7 +169,7 @@ class Bot(commands.Bot):
     
     def reddit_get(self, *args):
         random.seed()            
-        headers = {'User-agent': 'noahisbot'}
+        headers = {'User-agent': 'pywiki'}
 
         headlines = []
         
