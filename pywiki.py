@@ -10,6 +10,7 @@ import configparser
 import random
 import re
 import openai
+from pyowm.owm import OWM
 
 class Bot(commands.Bot):
 
@@ -132,6 +133,18 @@ class Bot(commands.Bot):
         definition = str(r[0]['shortdef'][0])
         print(self.nick + ': ' + definition)
         await ctx.send(definition[:500])
+
+    @commands.command()
+    async def weather(self, ctx: commands.Context):
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        owm = OWM(config['keys']['owm_api_key'])
+        mgr = owm.weather_manager()
+        observation = mgr.weather_at_places(ctx.message.content.split(' ', 1)[1], 'like', limit=2)[0]
+        #F = 1.8(K - 273) + 32
+        temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
+        print(self.nick + ': The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F')
+        await ctx.send('The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F')
             
     @commands.command()
     async def reddit(self, ctx: commands.Context):
