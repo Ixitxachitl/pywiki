@@ -143,8 +143,8 @@ class Bot(commands.Bot):
         observation = mgr.weather_at_places(ctx.message.content.split(' ', 1)[1], 'like', limit=2)[0]
         #F = 1.8(K - 273) + 32
         temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
-        print(self.nick + ': The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F')
-        await ctx.send('The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F')
+        print(self.nick + ': The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F and ' + observation.weather.status)
+        await ctx.send('The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F and ' + observation.weather.status)
             
     @commands.command()
     async def reddit(self, ctx: commands.Context):
