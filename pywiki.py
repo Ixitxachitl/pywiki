@@ -123,6 +123,17 @@ class Bot(commands.Bot):
         await ctx.send(completion.choices[0].text[:500])
             
     @commands.command()
+    async def define(self, ctx: commands.Context):
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        url =  'https://www.dictionaryapi.com/api/v3/references/learners/json/' + ctx.message.content.split(' ', 1)[1] + '?key=' + config['keys']['merriamwebster_api_key']
+        r = requests.get(url).json()
+        #print(json.dumps(r, indent=4, sort_keys=True))
+        definition = str(r[0]['shortdef'][0])
+        print(self.nick + ': ' + definition)
+        await ctx.send(definition[:500])
+    
+    @commands.command()
     async def reddit(self, ctx: commands.Context):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
