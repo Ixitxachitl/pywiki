@@ -174,7 +174,7 @@ class Bot(commands.Bot):
     async def help(self, ctx: commands.Context):
         output = ''
         for key in self.commands:
-            output += '!' + key + ' '
+            output += self._prefix + key + ' '
         print(self.nick + ': ' + output)
         await ctx.send(output)
 
