@@ -78,7 +78,7 @@ class Bot(commands.Bot):
                         p = str(e)
                     
                 print(self.nick + ": " + p)
-                await ctx.send(p[:500])
+                await ctx.send(p.replace('\r','').replace('\n','')[:500])
                 self.wiki_cooldown = True
                 self.wiki_cooldown_routine.start()
 
@@ -130,7 +130,7 @@ class Bot(commands.Bot):
         if config['options']['ai_enabled'] == 'True':
             completion = openai.Completion.create(max_tokens = 128, engine='text-davinci-001', prompt=ctx.message.content.split(' ', 1)[1])
             print(self.nick + ': ' + completion.choices[0].text.strip())
-            await ctx.send(completion.choices[0].text.strip()[:500])
+            await ctx.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
 
     @commands.command()
     async def define(self, ctx: commands.Context):
@@ -189,7 +189,7 @@ class Bot(commands.Bot):
                     text = title['data']['title'] + ' '
                 else:
                     text = title['data']['title'] + '…'
-                joke = text + output.replace('\r','').replace('\n','')
+                joke = text + output.replace('\r',' ').replace('\n',' ')
                 joke = re.split("edit:", joke, flags=re.IGNORECASE)[0]
             else:
                 print ('regexed: ' + title['data']['title'] + output)
