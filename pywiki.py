@@ -214,23 +214,26 @@ class Bot(commands.Bot):
         r = requests.get(url, headers=headers).json()
         joke = ''
         while joke == '':
-            title = r['data']['children'][random.randint(0,len(r['data']['children'])-1)]
-            print(json.dumps(title, indent=4, sort_keys=True))
-            output = title['data']['selftext']
+            post = r['data']['children'][random.randint(0,len(r['data']['children'])-1)]
+            #print(json.dumps(title, indent=4, sort_keys=True))
+            print('From ' + post['data']['subreddit'])
+            title = post['data']['title']
+            output = post['data']['selftext']
+            print(title + ' || ' + output)
             if (len(output) < 100 and not
                 re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', output)):
-                if (title['data']['title'].endswith('?') or
-                    title['data']['title'].endswith('.') or
-                    title['data']['title'].endswith('…') or
-                    title['data']['title'].endswith(',') or
+                if (title.endswith('?') or
+                    title.endswith('.') or
+                    title.endswith('…') or
+                    title.endswith(',') or
                     len(output) == 0):
-                    text = title['data']['title'] + ' '
+                    text = title + ' '
                 else:
-                    text = title['data']['title'] + '…'
+                    text = title + '…'
                 joke = text + output.replace('\r',' ').replace('\n',' ')
                 joke = re.split("edit:", joke, flags=re.IGNORECASE)[0]
             else:
-                print ('regexed: ' + title['data']['title'] + output)
+                print ('regexed')
         return joke
     
     def reddit_get(self, *args):
