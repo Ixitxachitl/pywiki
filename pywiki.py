@@ -142,10 +142,14 @@ class Bot(commands.Bot):
             url =  'https://www.dictionaryapi.com/api/v3/references/learners/json/' + ctx.message.content.split(' ', 1)[1] + '?key=' + config['keys']['merriamwebster_api_key']
             r = requests.get(url).json()
             #print(json.dumps(r, indent=4, sort_keys=True))
-            definition = str(r[0]['shortdef'][0])
-            print(self.nick + ': ' + definition)
-            await ctx.send(definition[:500])
-
+            try:
+                definition = str(r[0]['shortdef'][0])
+                print(self.nick + ': ' + definition)
+                await ctx.send(definition[:500])
+            except TypeError as e:
+                print(self.nick + ': Definition for ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
+                await ctx.send('Definition for ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
+                
     @commands.command()
     async def weather(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -181,7 +185,6 @@ class Bot(commands.Bot):
     def getjoke(self, url):
         headers = {'User-agent': 'pywiki'}
         r = requests.get(url, headers=headers).json()
-        #print(json.dumps(r, indent=4, sort_keys=True))
         joke = ''
         while joke == '':
             title = r['data']['children'][random.randint(0,len(r['data']['children'])-1)]
