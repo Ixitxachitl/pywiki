@@ -159,11 +159,17 @@ class Bot(commands.Bot):
             config.read(r'keys.ini')
             owm = OWM(config['keys']['owm_api_key'])
             mgr = owm.weather_manager()
-            observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
-            #F = 1.8(K - 273) + 32
-            temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
-            print(self.nick + ': The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F and ' + observation.weather.status)
-            await ctx.send('The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F and ' + observation.weather.status)
+            try:
+                observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
+                #F = 1.8(K - 273) + 32
+                #C = K – 273.15
+                temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
+                temp_c = int(observation.weather.temp['temp'] - 273.15)
+                print(self.nick + ': The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
+                await ctx.send('The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
+            except:
+                print(self.nick + ': Location ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
+                await ctx.send('Location ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
             
     @commands.command()
     async def reddit(self, ctx: commands.Context):
