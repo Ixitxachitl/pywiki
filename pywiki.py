@@ -219,7 +219,7 @@ class Bot(commands.Bot):
             subreddit = post['data']['subreddit']
             title = post['data']['title']
             output = post['data']['selftext']
-            print(title + ' ' + output + ' r/' + subreddit)
+            #print(title + ' ' + output + ' r/' + subreddit)
             if (len(output) < 100 and not
                 re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', output)):
                 if (title.endswith('?') or
