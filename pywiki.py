@@ -41,7 +41,18 @@ class Bot(commands.Bot):
     async def event_message(self, message):
         if message.echo:
             return
-        print(message.author.name + ": " + message.content)
+        
+        print(message.author.name + ': ' + message.content)
+        
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        if message.author.name not in config['variables']['chatters'].split(','):
+            config['variables']['chatters'] += message.author.name + ','
+            with open('keys.ini', 'w') as configfile:
+                config.write(configfile)
+            print(self.nick + ': Welcome ' + message.author.name + '!')
+            await message.channel.send('Welcome ' + message.author.name + '!')
+            
         await self.handle_commands(message)
 
     @routines.routine(iterations=1)
@@ -129,7 +140,7 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['ai_enabled'] == 'True':
-            completion = openai.Completion.create(max_tokens = 128, engine='text-davinci-001', prompt=ctx.message.content.split(' ', 1)[1])
+            completion = openai.Completion.create(max_tokens = 128, engine='text-davinci-002', prompt=ctx.message.content.split(' ', 1)[1])
             print(self.nick + ': ' + completion.choices[0].text.strip())
             await ctx.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
 
