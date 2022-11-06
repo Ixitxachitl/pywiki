@@ -242,19 +242,11 @@ class Bot(commands.Bot):
 
         headlines = []
         
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
 
-        urls =  ['https://www.reddit.com/r/showerthoughts/top.json?limit=100&t=all',
-                'https://www.reddit.com/r/cleanjokes/top.json?limit=100&t=all&after=t3_btz48s',
-                'https://www.reddit.com/r/cleanjokes/top.json?limit=100&t=all',
-                'https://www.reddit.com/r/dadjokes/top.json?limit=100&t=all&after=t3_d1koh0',
-                'https://www.reddit.com/r/dadjokes/top.json?limit=100&t=all',
-                'https://www.reddit.com/r/oneliners/top.json?limit=100&t=all&after=t3_aosa3a',
-                'https://www.reddit.com/r/oneliners/top.json?limit=100&t=all',
-                'https://www.reddit.com/r/3amjokes/top.json?limit=100&t=all&after=t3_cnwuur',
-                'https://www.reddit.com/r/3amjokes/top.json?limit=100&t=all',
-                'https://www.reddit.com/r/ImitationZen/top.json?limit=100&t=all',
-                'https://www.reddit.com/r/wouldyourather/top.json?limit=100&t=all']
-
+        urls = json.loads(config.get('variables','reddit_urls'))
+        
         random.shuffle(urls)
 
         headlines.append(self.getjoke(urls[0]))
