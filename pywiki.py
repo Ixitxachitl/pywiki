@@ -11,6 +11,7 @@ import random
 import re
 import openai
 from pyowm.owm import OWM
+from deep_translator import GoogleTranslator
 
 class Bot(commands.Bot):
 
@@ -149,6 +150,15 @@ class Bot(commands.Bot):
             except TypeError as e:
                 print(self.nick + ': Definition for ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
                 await ctx.send('Definition for ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
+
+    @commands.command()
+    async def translate(self, ctx: commands.Context):
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        if config['options']['translate_enabled'] == 'True':
+            translated = GoogleTranslator(source='auto', target='en').translate(ctx.message.content.split(' ', 1)[1])
+            print(self.nick + ': ' + translated)
+            await ctx.send(translated[:500])
                 
     @commands.command()
     async def weather(self, ctx: commands.Context):
