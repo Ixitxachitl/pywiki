@@ -216,10 +216,10 @@ class Bot(commands.Bot):
         while joke == '':
             post = r['data']['children'][random.randint(0,len(r['data']['children'])-1)]
             #print(json.dumps(title, indent=4, sort_keys=True))
-            print('From ' + post['data']['subreddit'])
+            subreddit = post['data']['subreddit']
             title = post['data']['title']
             output = post['data']['selftext']
-            print(title + ' || ' + output)
+            print(title + ' ' + output + ' r/' + subreddit)
             if (len(output) < 100 and not
                 re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', output)):
                 if (title.endswith('?') or
@@ -230,7 +230,7 @@ class Bot(commands.Bot):
                     text = title + ' '
                 else:
                     text = title + '…'
-                joke = text + output.replace('\r',' ').replace('\n',' ')
+                joke = text + output.replace('\r',' ').replace('\n',' ') + ' r/' + subreddit
                 joke = re.split("edit:", joke, flags=re.IGNORECASE)[0]
             else:
                 print ('regexed')
