@@ -167,8 +167,16 @@ class Bot(commands.Bot):
         config.read(r'keys.ini')
         if config['options']['reddit_enabled'] == 'True':
             joke = self.reddit_get()
-            print(self.nick + ": " + joke)
+            print(self.nick + ': ' + joke)
             await ctx.send(joke)
+
+    @commands.command()
+    async def help(self, ctx: commands.Context):
+        output = ''
+        for key in self.commands:
+            output += '!' + key + ' '
+        print(self.nick + ': ' + output)
+        await ctx.send(output)
 
     def getjoke(self, url):
         headers = {'User-agent': 'pywiki'}
