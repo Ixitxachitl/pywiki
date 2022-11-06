@@ -56,95 +56,110 @@ class Bot(commands.Bot):
 
     @commands.command()
     async def wiki(self, ctx: commands.Context):
-        if self.wiki_cooldown == False:
-            wikipedia.set_lang("en")
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        if config['options']['wiki_enabled'] == 'True':
+            if self.wiki_cooldown == False:
+                wikipedia.set_lang("en")
 
-            try:
                 try:
-                    p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=2, auto_suggest=False)
-                except wikipedia.DisambiguationError as e:
-                    print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
-                    p = wikipedia.summary(str(e.options[0]), sentences=2, auto_suggest=False)
-            except:
-                try:
-                    p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=2, auto_suggest=True)
-                except wikipedia.DisambiguationError as e:
-                    print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
-                    p = wikipedia.summary(str(e.options[0]), sentences=2, auto_suggest=False)
-                except wikipedia.PageError as e:
-                    p = str(e)
-                
-            print(self.nick + ": " + p)
-            await ctx.send(p[:500])
-            self.wiki_cooldown = True
-            self.wiki_cooldown_routine.start()
+                    try:
+                        p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=2, auto_suggest=False)
+                    except wikipedia.DisambiguationError as e:
+                        print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
+                        p = wikipedia.summary(str(e.options[0]), sentences=2, auto_suggest=False)
+                except:
+                    try:
+                        p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=2, auto_suggest=True)
+                    except wikipedia.DisambiguationError as e:
+                        print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
+                        p = wikipedia.summary(str(e.options[0]), sentences=2, auto_suggest=False)
+                    except wikipedia.PageError as e:
+                        p = str(e)
+                    
+                print(self.nick + ": " + p)
+                await ctx.send(p[:500])
+                self.wiki_cooldown = True
+                self.wiki_cooldown_routine.start()
 
     @commands.command()
     async def followage(self, ctx: commands.Context):
-        headers = {'Client-ID': self.client_id, 'Authorization':'Bearer ' + self.client_credentials['access_token']}
-        url_to = 'https://api.twitch.tv/helix/users?login=' + ctx.channel.name
-        to_id = requests.get(url_to, headers=headers).json()['data'][0]['id']
-        url_from = 'https://api.twitch.tv/helix/users?login=' + ctx.author.name
-        from_id = requests.get(url_from, headers=headers).json()['data'][0]['id']
-        url_follow = 'https://api.twitch.tv/helix/users/follows?to_id=' + to_id + '&from_id=' + from_id
-        r = requests.get(url_follow, headers=headers).json()
-        print(json.dumps(r, indent=4, sort_keys=True))
-        try:
-            f = r['data'][0]['followed_at']
-            con_followed_at = datetime.datetime.strptime(f, '%Y-%m-%dT%H:%M:%SZ')
-            time = relativedelta(datetime.datetime.now(), con_followed_at)
-            string = ctx.author.name + ' has been following for '
-            if time.years == 1:
-                string += str(time.years) + ' year, '
-            elif time.years > 1:
-                string += str(time.years) + ' years, '
-            if time.months == 1:
-                string += str(time.months) + ' month, '
-            elif time.months > 1:
-                string += str(time.months) + ' months, '
-            if time.days == 1:
-                string += str(time.days) + ' day, '
-            elif time.days > 1:
-                string += str(time.days) + ' days, '
-            if time.hours == 1:
-                string += str(time.hours) + ' hour '
-            elif time.hours > 1:
-                string += str(time.hours) + ' hours '
-            print(self.nick + ': ' + string + 'patche5Love')
-            await ctx.send(string + 'patche5Love')
-        except Exception as e:
-            print(e)
-            print(self.nick + ': ' + ctx.author.name + ' is not following')
-            await ctx.send(ctx.author.name + ' is not following')
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        if config['options']['followage_enabled'] == 'True':
+            headers = {'Client-ID': self.client_id, 'Authorization':'Bearer ' + self.client_credentials['access_token']}
+            url_to = 'https://api.twitch.tv/helix/users?login=' + ctx.channel.name
+            to_id = requests.get(url_to, headers=headers).json()['data'][0]['id']
+            url_from = 'https://api.twitch.tv/helix/users?login=' + ctx.author.name
+            from_id = requests.get(url_from, headers=headers).json()['data'][0]['id']
+            url_follow = 'https://api.twitch.tv/helix/users/follows?to_id=' + to_id + '&from_id=' + from_id
+            r = requests.get(url_follow, headers=headers).json()
+            print(json.dumps(r, indent=4, sort_keys=True))
+            try:
+                f = r['data'][0]['followed_at']
+                con_followed_at = datetime.datetime.strptime(f, '%Y-%m-%dT%H:%M:%SZ')
+                time = relativedelta(datetime.datetime.now(), con_followed_at)
+                string = ctx.author.name + ' has been following for '
+                if time.years == 1:
+                    string += str(time.years) + ' year, '
+                elif time.years > 1:
+                    string += str(time.years) + ' years, '
+                if time.months == 1:
+                    string += str(time.months) + ' month, '
+                elif time.months > 1:
+                    string += str(time.months) + ' months, '
+                if time.days == 1:
+                    string += str(time.days) + ' day, '
+                elif time.days > 1:
+                    string += str(time.days) + ' days, '
+                if time.hours == 1:
+                    string += str(time.hours) + ' hour '
+                elif time.hours > 1:
+                    string += str(time.hours) + ' hours '
+                print(self.nick + ': ' + string + 'patche5Love')
+                await ctx.send(string + 'patche5Love')
+            except Exception as e:
+                print(e)
+                print(self.nick + ': ' + ctx.author.name + ' is not following')
+                await ctx.send(ctx.author.name + ' is not following')
 
     @commands.command()
     async def ai(self, ctx: commands.Context):
-        completion = openai.Completion.create(max_tokens = 128, engine='text-davinci-001', prompt=ctx.message.content.split(' ', 1)[1])
-        print(self.nick + ': ' + completion.choices[0].text.strip())
-        await ctx.send(completion.choices[0].text.strip()[:500])
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        if config['options']['ai_enabled'] == 'True':
+            completion = openai.Completion.create(max_tokens = 128, engine='text-davinci-001', prompt=ctx.message.content.split(' ', 1)[1])
+            print(self.nick + ': ' + completion.choices[0].text.strip())
+            await ctx.send(completion.choices[0].text.strip()[:500])
 
     @commands.command()
     async def define(self, ctx: commands.Context):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
-        url =  'https://www.dictionaryapi.com/api/v3/references/learners/json/' + ctx.message.content.split(' ', 1)[1] + '?key=' + config['keys']['merriamwebster_api_key']
-        r = requests.get(url).json()
-        #print(json.dumps(r, indent=4, sort_keys=True))
-        definition = str(r[0]['shortdef'][0])
-        print(self.nick + ': ' + definition)
-        await ctx.send(definition[:500])
+        if config['options']['define_enabled'] == 'True':
+            config = configparser.ConfigParser()
+            config.read(r'keys.ini')
+            url =  'https://www.dictionaryapi.com/api/v3/references/learners/json/' + ctx.message.content.split(' ', 1)[1] + '?key=' + config['keys']['merriamwebster_api_key']
+            r = requests.get(url).json()
+            #print(json.dumps(r, indent=4, sort_keys=True))
+            definition = str(r[0]['shortdef'][0])
+            print(self.nick + ': ' + definition)
+            await ctx.send(definition[:500])
 
     @commands.command()
     async def weather(self, ctx: commands.Context):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
-        owm = OWM(config['keys']['owm_api_key'])
-        mgr = owm.weather_manager()
-        observation = mgr.weather_at_places(ctx.message.content.split(' ', 1)[1], 'like', limit=2)[0]
-        #F = 1.8(K - 273) + 32
-        temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
-        print(self.nick + ': The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F and ' + observation.weather.status)
-        await ctx.send('The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F and ' + observation.weather.status)
+        if config['options']['weather_enabled'] == 'True':
+            config = configparser.ConfigParser()
+            config.read(r'keys.ini')
+            owm = OWM(config['keys']['owm_api_key'])
+            mgr = owm.weather_manager()
+            observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
+            #F = 1.8(K - 273) + 32
+            temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
+            print(self.nick + ': The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F and ' + observation.weather.status)
+            await ctx.send('The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F and ' + observation.weather.status)
             
     @commands.command()
     async def reddit(self, ctx: commands.Context):
