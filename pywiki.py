@@ -56,8 +56,20 @@ class Bot(commands.Bot):
             with open('keys.ini', 'w') as configfile:
                 config.write(configfile)
             if config['options']['welcome_enabled'] == 'True':
-                print(self.nick + ': Welcome ' + message.author.name + '!')
-                await message.channel.send('Welcome ' + message.author.name + '!')
+
+                ###---EDIT HERE FOR CUSTOM WELCOMES---###
+                '''Example:
+                if message.author.name == 'pywiki':
+                    message = 'YOUR MESSAGE HERE'
+                    print(self.nick + ': ' + message)
+                    await message.channel.send(message)
+                '''
+                ###---END EDIT ZONE---###
+
+                if message.author.is_subscriber or message.author.is_mod or message.author.is_vip:
+                    completion = openai.Completion.create(max_tokens = 128, engine=config['options']['ai_engine'], prompt=message.content)
+                    print(self.nick + ': ' + completion.choices[0].text.strip())
+                    await message.channel.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
             
         await self.handle_commands(message)
 
