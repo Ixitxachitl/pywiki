@@ -13,6 +13,9 @@ import openai
 from pyowm.owm import OWM
 from deep_translator import GoogleTranslator
 import ctypes
+from geopy import geocoders
+from pytz import timezone
+from tzwhere import tzwhere
 
 class Bot(commands.Bot):
 
@@ -214,6 +217,21 @@ class Bot(commands.Bot):
         print(self.nick + ': ' + output)
         await ctx.send(output)
 
+    @commands.command()
+    async def time(self, ctx: commands.Context):
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        if config['options']['time_enabled'] == 'True':
+            g = geocoders.Nominatim(user_agent="pywiki")
+            place, (lat, lng) = g.geocode(ctx.message.content.split(' ', 1)[1])
+            newplace = str(place).split(',')[0]
+            tz = tzwhere.tzwhere().tzNameAt(round(lat, 4), round(lng, 4))
+            zone = timezone(tz)
+            newtime = datetime.datetime.now(zone)
+            print(self.nick + ': The current time in ' + newplace + ' is ' + newtime.strftime('%H:%M:%S'))
+            await ctx.send('The current time in ' + newplace + ' is ' + newtime.strftime('%H:%M:%S'))
+            
+
     def getjoke(self, url):
         headers = {'User-agent': 'pywiki'}
         r = requests.get(url, headers=headers).json()
@@ -224,7 +242,6 @@ class Bot(commands.Bot):
             subreddit = post['data']['subreddit']
             title = post['data']['title']
             output = post['data']['selftext']
-            #print(title + ' ' + output + ' r/' + subreddit)
             if (len(output) < 100 and not
                 re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', output)):
                 if (title.endswith('?') or
@@ -238,6 +255,7 @@ class Bot(commands.Bot):
                 joke = text + output.replace('\r',' ').replace('\n',' ') + ' r/' + subreddit
                 joke = re.split("edit:", joke, flags=re.IGNORECASE)[0]
             else:
+                print(title + ' ' + output + ' r/' + subreddit)
                 print ('regexed')
         return joke
     
