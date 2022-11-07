@@ -49,8 +49,10 @@ class Bot(commands.Bot):
         
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
-        if message.author.name not in config['variables']['chatters'].split(','):
-            config['variables']['chatters'] += message.author.name + ','
+        chatters = json.loads(config.get('variables','chatters'))
+        if message.author.name not in chatters:
+            chatters.append(message.author.name)
+            config['variables']['chatters'] = json.dumps(chatters)
             with open('keys.ini', 'w') as configfile:
                 config.write(configfile)
             if config['options']['welcome_enabled'] == 'True':
