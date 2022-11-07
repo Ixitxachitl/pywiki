@@ -12,7 +12,6 @@ import re
 import openai
 from pyowm.owm import OWM
 from deep_translator import GoogleTranslator
-import ctypes
 from geopy import geocoders
 from pytz import timezone
 from tzwhere import tzwhere
@@ -203,11 +202,8 @@ class Bot(commands.Bot):
         config.read(r'keys.ini')
         if config['options']['reddit_enabled'] == 'True':
             joke = self.reddit_get()
-            answer = ctypes.windll.user32.MessageBoxW(0, joke, 'Approve?', 4)
-            print (answer)
-            if answer == 6:
-                print(self.nick + ': ' + joke)
-                await ctx.send(joke)
+            print(self.nick + ': ' + joke)
+            await ctx.send(joke)
 
     @commands.command()
     async def help(self, ctx: commands.Context):
