@@ -50,8 +50,9 @@ class Bot(commands.Bot):
             config['variables']['chatters'] += message.author.name + ','
             with open('keys.ini', 'w') as configfile:
                 config.write(configfile)
-            print(self.nick + ': Welcome ' + message.author.name + '!')
-            await message.channel.send('Welcome ' + message.author.name + '!')
+            if config['options']['welcome_enabled'] == 'True':
+                print(self.nick + ': Welcome ' + message.author.name + '!')
+                await message.channel.send('Welcome ' + message.author.name + '!')
             
         await self.handle_commands(message)
 
