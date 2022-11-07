@@ -12,8 +12,6 @@ Requirements:
 -pytz
 -tzwhere
 -maybe more?...
-  
-Currently uses a ctypes popup which is windows only.
 
 You'll need keys:
 -Twitch login key
