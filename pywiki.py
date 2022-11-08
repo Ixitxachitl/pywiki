@@ -203,7 +203,18 @@ class Bot(commands.Bot):
                 #C = K – 273.15
                 g = geocoders.GoogleV3(api_key = config['keys']['gmaps_api_key'], domain='maps.googleapis.com')
                 place = g.reverse((observation.location.lat,observation.location.lon))
-                address =  place.address.split(',', 1)[1]
+                #print(json.dumps(place.raw, indent=4, sort_keys=True))
+                address = ''
+                for item in place.raw['address_components']:
+                    if 'locality' in item['types']:
+                        city = item['long_name']
+                        address +=  city + ', '
+                    if 'administrative_area_level_1' in item['types']:
+                        state = item['short_name']
+                        address +=  state + ', '
+                    if 'country' in item['types']:
+                        country = item['short_name']
+                        address +=  country
                 temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
                 temp_c = int(observation.weather.temp['temp'] - 273.15)
                 print(self.nick + ': The temperture in ' + address + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
