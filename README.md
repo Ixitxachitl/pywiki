@@ -21,3 +21,4 @@ You'll need keys:
 -openai api key
 -dictionaryapi.com api key
 -open weather maps api key
+-google dev api key with timezone and geocoding apis enabled
