@@ -67,7 +67,7 @@ class Bot(commands.Bot):
                 ###---END EDIT ZONE---###
 
                 if message.author.is_subscriber or message.author.is_mod or message.author.is_vip:
-                    completion = openai.Completion.create(max_tokens = 128, engine=config['options']['ai_engine'], prompt=message.content)
+                    completion = openai.Completion.create(max_tokens = 56, engine=config['options']['ai_engine'], prompt=message.content)
                     print(self.nick + ': ' + completion.choices[0].text.strip())
                     await message.channel.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
             
@@ -158,7 +158,7 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['ai_enabled'] == 'True':
-            completion = openai.Completion.create(max_tokens = 128, engine=config['options']['ai_engine'], prompt=ctx.message.content.split(' ', 1)[1])
+            completion = openai.Completion.create(max_tokens = 56, engine=config['options']['ai_engine'], prompt=ctx.message.content.split(' ', 1)[1])
             print(self.nick + ': ' + completion.choices[0].text.strip())
             await ctx.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
 
