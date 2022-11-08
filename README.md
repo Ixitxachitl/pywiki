@@ -13,6 +13,8 @@ Requirements:
 -tzwhere
 -maybe more?...
 
+Or just run it from the EXE
+
 You'll need keys:
 -Twitch login key
 -Twitch Dev client id and secret
