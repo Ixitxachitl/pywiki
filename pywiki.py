@@ -193,32 +193,34 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['weather_enabled'] == 'True':
-            config = configparser.ConfigParser()
-            config.read(r'keys.ini')
             owm = OWM(config['keys']['owm_api_key'])
             mgr = owm.weather_manager()
             try:
-                observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
                 #F = 1.8(K - 273) + 32
                 #C = K – 273.15
                 g = geocoders.GoogleV3(api_key = config['keys']['gmaps_api_key'], domain='maps.googleapis.com')
-                place = g.reverse((observation.location.lat,observation.location.lon))
-                #print(json.dumps(place.raw, indent=4, sort_keys=True))
-                address = ''
-                for item in place.raw['address_components']:
-                    if 'locality' in item['types']:
-                        city = item['long_name']
-                        address +=  city + ', '
-                    if 'administrative_area_level_1' in item['types']:
-                        state = item['short_name']
-                        address +=  state + ', '
-                    if 'country' in item['types']:
-                        country = item['short_name']
-                        address +=  country
+                place, (lat, lng) = g.geocode(ctx.message.content.split(' ', 1)[1])
+                try:
+                    observation = mgr.weather_at_place(place)
+                except:
+                    observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
+                    place_object = g.reverse((observation.location.lat,observation.location.lon))
+                    place = ''
+                    for item in place_object.raw['address_components']:
+                        if 'locality' in item['types']:
+                            city = item['long_name']
+                            place +=  city + ', '
+                        if 'administrative_area_level_1' in item['types']:
+                            state = item['short_name']
+                            place +=  state + ', '
+                        if 'country' in item['types']:
+                            country = item['short_name']
+                            place +=  country
+                
                 temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
                 temp_c = int(observation.weather.temp['temp'] - 273.15)
-                print(self.nick + ': The temperture in ' + address + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
-                await ctx.send('The temperture in ' + address + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
+                print(self.nick + ': The temperture in ' + place + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
+                await ctx.send('The temperture in ' + place + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
             except Exception as e:
                 print(e)
                 print(self.nick + ': Location ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
