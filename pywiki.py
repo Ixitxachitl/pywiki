@@ -251,8 +251,8 @@ class Bot(commands.Bot):
             g = geocoders.GoogleV3(api_key = config['keys']['gmaps_api_key'], domain='maps.googleapis.com')
             place, (lat, lng) = g.geocode(ctx.message.content.split(' ', 1)[1])
             tz = g.reverse_timezone((lat,lng))
-            zone = timezone(str(tz))
-            newtime = datetime.datetime.now(zone)
+            tz_object = timezone(str(tz))
+            newtime = datetime.datetime.now(tz_object)
             print(self.nick + ': The current time in ' + place + ' is ' + newtime.strftime('%H:%M:%S'))
             await ctx.send('The current time in ' + place + ' is ' + newtime.strftime('%H:%M:%S'))
             
