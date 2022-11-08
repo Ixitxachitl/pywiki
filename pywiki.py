@@ -253,8 +253,8 @@ class Bot(commands.Bot):
             tz = g.reverse_timezone((lat,lng))
             tz_object = timezone(str(tz))
             newtime = datetime.datetime.now(tz_object)
-            print(self.nick + ': The current time in ' + place + ' is ' + newtime.strftime('%H:%M:%S'))
-            await ctx.send('The current time in ' + place + ' is ' + newtime.strftime('%H:%M:%S'))
+            print(self.nick + ': The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
+            await ctx.send('The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
             
 
     def getjoke(self, url):
