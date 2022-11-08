@@ -201,11 +201,15 @@ class Bot(commands.Bot):
                 observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
                 #F = 1.8(K - 273) + 32
                 #C = K – 273.15
+                g = geocoders.GoogleV3(api_key = config['keys']['gmaps_api_key'], domain='maps.googleapis.com')
+                place = g.reverse((observation.location.lat,observation.location.lon))
+                address =  place.address.split(',', 1)[1]
                 temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
                 temp_c = int(observation.weather.temp['temp'] - 273.15)
-                print(self.nick + ': The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
-                await ctx.send('The temperture in ' + observation.location.name + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
-            except:
+                print(self.nick + ': The temperture in ' + address + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
+                await ctx.send('The temperture in ' + address + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
+            except Exception as e:
+                print(e)
                 print(self.nick + ': Location ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
                 await ctx.send('Location ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
             
