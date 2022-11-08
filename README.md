@@ -10,7 +10,6 @@ Requirements:
 -deep_translator
 -geopy
 -pytz
--tzwhere
 -maybe more?...
 
 Or just run it from the EXE
