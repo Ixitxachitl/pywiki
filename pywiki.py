@@ -14,7 +14,6 @@ from pyowm.owm import OWM
 from deep_translator import GoogleTranslator
 from geopy import geocoders
 from pytz import timezone
-from tzwhere import tzwhere
 
 class Bot(commands.Bot):
 
@@ -232,14 +231,13 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['time_enabled'] == 'True':
-            g = geocoders.Nominatim(user_agent="pywiki")
+            g = geocoders.GoogleV3(api_key = config['keys']['gmaps_api_key'], domain='maps.googleapis.com')
             place, (lat, lng) = g.geocode(ctx.message.content.split(' ', 1)[1])
-            newplace = str(place).split(',')[0]
-            tz = tzwhere.tzwhere().tzNameAt(round(lat, 4), round(lng, 4))
-            zone = timezone(tz)
+            tz = g.reverse_timezone((lat,lng))
+            zone = timezone(str(tz))
             newtime = datetime.datetime.now(zone)
-            print(self.nick + ': The current time in ' + newplace + ' is ' + newtime.strftime('%H:%M:%S'))
-            await ctx.send('The current time in ' + newplace + ' is ' + newtime.strftime('%H:%M:%S'))
+            print(self.nick + ': The current time in ' + place + ' is ' + newtime.strftime('%H:%M:%S'))
+            await ctx.send('The current time in ' + place + ' is ' + newtime.strftime('%H:%M:%S'))
             
 
     def getjoke(self, url):
