@@ -198,7 +198,7 @@ class Bot(commands.Bot):
             try:
                 #F = 1.8(K - 273) + 32
                 #C = K – 273.15
-                g = geocoders.GoogleV3(api_key = config['keys']['gmaps_api_key'], domain='maps.googleapis.com')
+                g = geocoders.GoogleV3(api_key = config['keys']['google_api_key'], domain='maps.googleapis.com')
                 place, (lat, lng) = g.geocode(ctx.message.content.split(' ', 1)[1])
                 try:
                     observation = mgr.weather_at_place(place)
@@ -256,7 +256,14 @@ class Bot(commands.Bot):
             print(self.nick + ': The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
             await ctx.send('The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
             
-
+    @commands.command()
+    async def exchange(self, ctx: commands.Context, cur_from = 'usd' , cur_to = 'eur' , amount = '1'):
+        url = 'https://api.exchangerate.host/convert?from=' + cur_from + '&to=' + cur_to + '&amount=' + amount
+        response = requests.get(url)
+        data = response.json()
+        print(self.nick + ': ' + amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
+        await ctx.send(amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
+        
     def getjoke(self, url):
         headers = {'User-agent': 'pywiki'}
         r = requests.get(url, headers=headers).json()
