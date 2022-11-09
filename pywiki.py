@@ -57,14 +57,13 @@ class Bot(commands.Bot):
             if config['options']['welcome_enabled'] == 'True':
 
                 ###---EDIT HERE FOR CUSTOM WELCOMES---###
-                '''Example:
-                if message.author.name == 'pywiki':
-                    message = 'YOUR MESSAGE HERE'
-                    print(self.nick + ': ' + message)
-                    await message.channel.send(message)
                 '''
-               
-                #delete this \/
+                if message.author.name == '':
+                    response = ''
+                    print(self.nick + ': ' + response)
+                    await message.channel.send(response)
+                '''
+
                 if message.author.is_subscriber or message.author.is_mod or message.author.is_vip:
                     completion = openai.Completion.create(max_tokens = 128, engine=config['options']['ai_engine'], prompt=message.content)
                     #print(json.dumps(completion, indent=4, sort_keys=True))
@@ -75,10 +74,9 @@ class Bot(commands.Bot):
                         await message.channel.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
                     else:
                         print(self.nick + ': Response Flagged')
-                        await message.channel.send('Response Flagged')
-                #delete this ^
+                        await message.channel.send('Response Flagged')              
 
-                 ###---END EDIT ZONE---###
+                ###---END EDIT ZONE---###
             
         await self.handle_commands(message)
 
