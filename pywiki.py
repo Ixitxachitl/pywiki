@@ -158,9 +158,16 @@ class Bot(commands.Bot):
         config.read(r'keys.ini')
         if config['options']['ai_enabled'] == 'True':
             completion = openai.Completion.create(max_tokens = 56, engine=config['options']['ai_engine'], prompt=ctx.message.content.split(' ', 1)[1])
-            print(self.nick + ': ' + completion.choices[0].text.strip())
-            await ctx.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
-
+            #print(json.dumps(completion, indent=4, sort_keys=True))
+            moderation = openai.Moderation.create(input=completion.choices[0].text, model = 'text-moderation-stable')
+            #print(json.dumps(moderation, indent=4, sort_keys=True))
+            if not moderation.results[0]['flagged']:
+                print(self.nick + ': ' + completion.choices[0].text.strip())
+                await ctx.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
+            else
+                print(self.nick + ': Response Flagged')
+                await ctx.send('Response Flagged')
+                
     @commands.command()
     async def define(self, ctx: commands.Context):
         config = configparser.ConfigParser()
