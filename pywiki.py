@@ -277,10 +277,20 @@ class Bot(commands.Bot):
         config.read(r'keys.ini')
         if config['options']['exchange_enabled'] == 'True':
             url = 'https://api.exchangerate.host/convert?from=' + cur_from + '&to=' + cur_to + '&amount=' + amount
-            response = requests.get(url)
-            data = response.json()
+            data = requests.get(url).json()
             print(self.nick + ': ' + amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
             await ctx.send(amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
+
+    @commands.command()
+    async def fact(self, ctx: commands.Context):
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        if config['options']['fact_enabled'] == 'True':
+            url = 'https://uselessfacts.jsph.pl/random.json?language=en'
+            fact = requests.get(url).json()
+            #print(json.dumps(fact, indent=4, sort_keys=True))
+            print(self.nick + ': ' + fact['text'])
+            await ctx.send(fact['text'])
         
     def getjoke(self, url):
         headers = {'User-agent': 'pywiki'}
