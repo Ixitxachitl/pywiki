@@ -66,7 +66,7 @@ class Bot(commands.Bot):
                 ###---END EDIT ZONE---###
 
                 if message.author.is_subscriber or message.author.is_mod or message.author.is_vip:
-                    completion = openai.Completion.create(max_tokens = 56, engine=config['options']['ai_engine'], prompt=message.content.split(' ', 1)[1])
+                    completion = openai.Completion.create(max_tokens = 56, engine=config['options']['ai_engine'], prompt=message.content)
                     #print(json.dumps(completion, indent=4, sort_keys=True))
                     moderation = openai.Moderation.create(input=completion.choices[0].text, model = 'text-moderation-stable')
                     #print(json.dumps(moderation, indent=4, sort_keys=True))
