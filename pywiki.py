@@ -264,8 +264,30 @@ class Bot(commands.Bot):
     @commands.command()
     async def help(self, ctx: commands.Context):
         output = ''
-        for key in self.commands:
-            output += self._prefix + key + ' '
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        
+        if config['options']['wiki_enabled'] == 'True':
+            output += '!wiki '
+        if config['options']['followage_enabled'] == 'True':
+            output += '!followage '
+        if config['options']['ai_enabled'] == 'True':
+            output += '!ai '
+        if config['options']['define_enabled'] == 'True':
+            output += '!define '
+        if config['options']['translate_enabled'] == 'True':
+            output += '!translate '
+        if config['options']['weather_enabled'] == 'True':
+            output += '!weather '
+        if config['options']['reddit_enabled'] == 'True':
+            output += '!reddit '
+        if config['options']['time_enabled'] == 'True':
+            output += '!followage '
+        if config['options']['exchange_enabled'] == 'True':
+            output += '!exchange '
+        if config['options']['fact_enabled'] == 'True':
+            output += '!fact '
+                
         print(self.nick + ': ' + output)
         await ctx.send(output)
 
