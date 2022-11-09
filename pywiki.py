@@ -164,7 +164,7 @@ class Bot(commands.Bot):
             if not moderation.results[0]['flagged']:
                 print(self.nick + ': ' + completion.choices[0].text.strip())
                 await ctx.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
-            else
+            else:
                 print(self.nick + ': Response Flagged')
                 await ctx.send('Response Flagged')
                 
