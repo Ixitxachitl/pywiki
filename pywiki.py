@@ -66,9 +66,16 @@ class Bot(commands.Bot):
                 ###---END EDIT ZONE---###
 
                 if message.author.is_subscriber or message.author.is_mod or message.author.is_vip:
-                    completion = openai.Completion.create(max_tokens = 56, engine=config['options']['ai_engine'], prompt=message.content)
-                    print(self.nick + ': ' + completion.choices[0].text.strip())
-                    await message.channel.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
+                    completion = openai.Completion.create(max_tokens = 56, engine=config['options']['ai_engine'], prompt=ctx.message.content.split(' ', 1)[1])
+                    #print(json.dumps(completion, indent=4, sort_keys=True))
+                    moderation = openai.Moderation.create(input=completion.choices[0].text, model = 'text-moderation-stable')
+                    #print(json.dumps(moderation, indent=4, sort_keys=True))
+                    if not moderation.results[0]['flagged']:
+                        print(self.nick + ': ' + completion.choices[0].text.strip())
+                        await message.cannel.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
+                    else:
+                        print(self.nick + ': Response Flagged')
+                        await message.cannel.send('Response Flagged')
             
         await self.handle_commands(message)
 
