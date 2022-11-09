@@ -213,23 +213,19 @@ class Bot(commands.Bot):
                 #F = 1.8(K - 273) + 32
                 #C = K – 273.15
                 g = geocoders.GoogleV3(api_key = config['keys']['google_api_key'], domain='maps.googleapis.com')
-                place, (lat, lng) = g.geocode(ctx.message.content.split(' ', 1)[1])
-                try:
-                    observation = mgr.weather_at_place(place)
-                except:
-                    observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
-                    place_object = g.reverse((observation.location.lat,observation.location.lon))
-                    place = ''
-                    for item in place_object.raw['address_components']:
-                        if 'locality' in item['types']:
-                            city = item['long_name']
-                            place +=  city + ', '
-                        if 'administrative_area_level_1' in item['types']:
-                            state = item['short_name']
-                            place +=  state + ', '
-                        if 'country' in item['types']:
-                            country = item['short_name']
-                            place +=  country
+                observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
+                place_object = g.reverse((observation.location.lat,observation.location.lon))
+                place = ''
+                for item in place_object.raw['address_components']:
+                    if 'locality' in item['types']:
+                        city = item['long_name']
+                        place +=  city + ', '
+                    if 'administrative_area_level_1' in item['types']:
+                        state = item['short_name']
+                        place +=  state + ', '
+                    if 'country' in item['types']:
+                        country = item['short_name']
+                        place +=  country
                 
                 temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
                 temp_c = int(observation.weather.temp['temp'] - 273.15)
