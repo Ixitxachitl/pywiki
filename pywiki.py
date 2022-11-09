@@ -273,11 +273,14 @@ class Bot(commands.Bot):
             
     @commands.command()
     async def exchange(self, ctx: commands.Context, cur_from = 'usd' , cur_to = 'eur' , amount = '1'):
-        url = 'https://api.exchangerate.host/convert?from=' + cur_from + '&to=' + cur_to + '&amount=' + amount
-        response = requests.get(url)
-        data = response.json()
-        print(self.nick + ': ' + amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
-        await ctx.send(amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        if config['options']['exchange_enabled'] == 'True':
+            url = 'https://api.exchangerate.host/convert?from=' + cur_from + '&to=' + cur_to + '&amount=' + amount
+            response = requests.get(url)
+            data = response.json()
+            print(self.nick + ': ' + amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
+            await ctx.send(amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
         
     def getjoke(self, url):
         headers = {'User-agent': 'pywiki'}
