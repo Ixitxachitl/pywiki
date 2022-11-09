@@ -214,6 +214,7 @@ class Bot(commands.Bot):
                 #C = K – 273.15
                 g = geocoders.GoogleV3(api_key = config['keys']['google_api_key'], domain='maps.googleapis.com')
                 observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
+                one_call = mgr.one_call(lat=observation.location.lat, lon=observation.location.lon)
                 place_object = g.reverse((observation.location.lat,observation.location.lon))
                 place = ''
                 for item in place_object.raw['address_components']:
@@ -229,8 +230,12 @@ class Bot(commands.Bot):
                 
                 temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
                 temp_c = int(observation.weather.temp['temp'] - 273.15)
-                print(self.nick + ': The temperture in ' + place + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
-                await ctx.send('The temperture in ' + place + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.status)
+                f_temp_f = int(one_call.forecast_daily[1].temperature('fahrenheit').get('max', None))
+                f_temp_c = int(one_call.forecast_daily[1].temperature('celsius').get('max', None))
+                print(self.nick + ': The temperture in ' + place + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.detailed_status
+                      + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' + one_call.forecast_daily[1].detailed_status)
+                await ctx.send('The temperture in ' + place + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.detailed_status
+                               + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' + one_call.forecast_daily[1].detailed_status)
             except Exception as e:
                 print(e)
                 print(self.nick + ': Location ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
@@ -258,7 +263,7 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['time_enabled'] == 'True':
-            g = geocoders.GoogleV3(api_key = config['keys']['gmaps_api_key'], domain='maps.googleapis.com')
+            g = geocoders.GoogleV3(api_key = config['keys']['google_api_key'], domain='maps.googleapis.com')
             place, (lat, lng) = g.geocode(ctx.message.content.split(' ', 1)[1])
             tz = g.reverse_timezone((lat,lng))
             tz_object = timezone(str(tz))
