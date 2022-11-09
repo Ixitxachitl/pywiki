@@ -63,10 +63,10 @@ class Bot(commands.Bot):
                     print(self.nick + ': ' + message)
                     await message.channel.send(message)
                 '''
-                ###---END EDIT ZONE---###
-
+               
+                #delete this \/
                 if message.author.is_subscriber or message.author.is_mod or message.author.is_vip:
-                    completion = openai.Completion.create(max_tokens = 56, engine=config['options']['ai_engine'], prompt=message.content)
+                    completion = openai.Completion.create(max_tokens = 128, engine=config['options']['ai_engine'], prompt=message.content)
                     #print(json.dumps(completion, indent=4, sort_keys=True))
                     moderation = openai.Moderation.create(input=completion.choices[0].text, model = 'text-moderation-stable')
                     #print(json.dumps(moderation, indent=4, sort_keys=True))
@@ -76,6 +76,9 @@ class Bot(commands.Bot):
                     else:
                         print(self.nick + ': Response Flagged')
                         await message.channel.send('Response Flagged')
+                #delete this ^
+
+                 ###---END EDIT ZONE---###
             
         await self.handle_commands(message)
 
@@ -164,7 +167,7 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['ai_enabled'] == 'True':
-            completion = openai.Completion.create(max_tokens = 56, engine=config['options']['ai_engine'], prompt=ctx.message.content.split(' ', 1)[1])
+            completion = openai.Completion.create(max_tokens = 128, engine=config['options']['ai_engine'], prompt=ctx.message.content.split(' ', 1)[1])
             #print(json.dumps(completion, indent=4, sort_keys=True))
             moderation = openai.Moderation.create(input=completion.choices[0].text, model = 'text-moderation-stable')
             #print(json.dumps(moderation, indent=4, sort_keys=True))
@@ -216,17 +219,27 @@ class Bot(commands.Bot):
                 observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
                 one_call = mgr.one_call(lat=observation.location.lat, lon=observation.location.lon)
                 place_object = g.reverse((observation.location.lat,observation.location.lon))
+                #print(json.dumps(place_object.raw, indent=4, sort_keys=True))
                 place = ''
                 for item in place_object.raw['address_components']:
                     if 'locality' in item['types']:
                         city = item['long_name']
                         place +=  city + ', '
+                        break
+                for item in place_object.raw['address_components']:
                     if 'administrative_area_level_1' in item['types']:
                         state = item['short_name']
                         place +=  state + ', '
+                        break
+                for item in place_object.raw['address_components']:
                     if 'country' in item['types']:
                         country = item['short_name']
                         place +=  country
+                        break
+                for item in place_object.raw['address_components']:
+                    if 'plus_code' in item['types'] and place == '':
+                        place = item['short_name']
+                        break
                 
                 temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
                 temp_c = int(observation.weather.temp['temp'] - 273.15)
