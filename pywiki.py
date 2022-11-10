@@ -282,7 +282,7 @@ class Bot(commands.Bot):
         if config['options']['reddit_enabled'] == 'True':
             output += '!reddit '
         if config['options']['time_enabled'] == 'True':
-            output += '!followage '
+            output += '!time '
         if config['options']['exchange_enabled'] == 'True':
             output += '!exchange '
         if config['options']['fact_enabled'] == 'True':
