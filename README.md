@@ -10,6 +10,8 @@ Requirements:
 -deep_translator
 -geopy
 -pytz
+-pyttsx3
+-pycountry
 -maybe more?...
 
 Or just run it from the EXE
@@ -21,3 +23,4 @@ You'll need keys:
 -dictionaryapi.com api key
 -open weather maps api key
 -google cloud platform api key with timezone and geocoding apis enabled
+-detect language api key
