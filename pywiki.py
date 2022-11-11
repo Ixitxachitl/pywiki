@@ -14,10 +14,12 @@ import re
 import openai
 from pyowm.owm import OWM
 from deep_translator import GoogleTranslator
+from deep_translator import single_detection
 from geopy import geocoders
 from pytz import timezone
 import sys
 import pyttsx3
+import pycountry
 
 
 class PubSub(object):
@@ -37,9 +39,11 @@ class PubSub(object):
         async def event_pubsub_channel_points(event: pubsub.PubSubChannelPointsMessage):
             # print(json.dumps(event._data, indent=4, sort_keys=True))
             event_id = event._data['message']['data']['redemption']['reward']['title']
-            if event_id == 'Ping':
-                print(self.client.nick + ': Pong')
-                await self.pubsub_channel.send('Pong')
+            if event_id == 'Eggs':
+                print(self.client.nick + ': 🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
+                                         '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
+                await self.pubsub_channel.send('🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
+                                               '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
             elif event_id == 'TTS':
                 user_input = event._data['message']['data']['redemption']['user_input']
                 # print(self.client.nick + ': ' + user_input)
@@ -108,7 +112,8 @@ class Bot(commands.Bot):
                 '''
 
                 if message.author.is_subscriber or message.author.is_mod or message.author.is_vip:
-                    completion = openai.Completion.create(temperature=int(config['options']['temperature']), max_tokens=128,
+                    completion = openai.Completion.create(temperature=int(config['options']['temperature']),
+                                                          max_tokens=int(config['options']['tokens']),
                                                           engine=config['options']['ai_engine'], prompt=message.content)
                     # print(json.dumps(completion, indent=4, sort_keys=True))
                     moderation = openai.Moderation.create(input=completion.choices[0].text,
@@ -213,7 +218,9 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['ai_enabled'] == 'True':
-            completion = openai.Completion.create(temperature=int(config['options']['temperature']), max_tokens=128, engine=config['options']['ai_engine'],
+            completion = openai.Completion.create(temperature=int(config['options']['temperature']),
+                                                  max_tokens=int(config['options']['tokens']),
+                                                  engine=config['options']['ai_engine'],
                                                   prompt=ctx.message.content.split(' ', 1)[1])
             # print(json.dumps(completion, indent=4, sort_keys=True))
             moderation = openai.Moderation.create(input=completion.choices[0].text, model='text-moderation-stable')
@@ -251,8 +258,12 @@ class Bot(commands.Bot):
         config.read(r'keys.ini')
         if config['options']['translate_enabled'] == 'True':
             translated = GoogleTranslator(source='auto', target='en').translate(ctx.message.content.split(' ', 1)[1])
-            print(self.nick + ': ' + translated)
-            await ctx.send(translated[:500])
+            language_short = single_detection(ctx.message.content.split(' ', 1)[1], api_key=config['keys'][
+                'detect_language_api_key'])
+            language_long = pycountry.languages.get(alpha_2=language_short)
+            response = 'From ' + language_long.name + ': ' + translated
+            print(self.nick + ': ' + response)
+            await ctx.send(response[:500])
 
     @commands.command()
     async def weather(self, ctx: commands.Context):
