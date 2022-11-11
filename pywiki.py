@@ -1,3 +1,5 @@
+import twitchio
+from twitchio.ext import pubsub
 from twitchio.ext import commands
 from twitchio.ext import routines
 import asyncio
@@ -14,41 +16,82 @@ from pyowm.owm import OWM
 from deep_translator import GoogleTranslator
 from geopy import geocoders
 from pytz import timezone
+import sys
+import pyttsx3
+
+
+class PubSub(object):
+    def __init__(self):
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        self.my_token = config['keys']['token']
+        self.users_oauth_token = config['keys']['pubsub_oauth_token']
+        self.users_channel = config['options']['pubsub_channel']
+        self.users_channel_id = int(config['options']['pubsub_channel_id'])
+        self.client = twitchio.Client(token=self.my_token)
+        self.client.pubsub = pubsub.PubSubPool(self.client)
+        self.pubsub_channel = twitchio.Channel(self.users_channel, self.client._connection)
+        self.topics = [pubsub.channel_points(self.users_oauth_token)[self.users_channel_id]]
+
+        @self.client.event()
+        async def event_pubsub_channel_points(event: pubsub.PubSubChannelPointsMessage):
+            # print(json.dumps(event._data, indent=4, sort_keys=True))
+            event_id = event._data['message']['data']['redemption']['reward']['title']
+            if event_id == 'Ping':
+                print(self.client.nick + ': Pong')
+                await self.pubsub_channel.send('Pong')
+            elif event_id == 'TTS':
+                user_input = event._data['message']['data']['redemption']['user_input']
+                # print(self.client.nick + ': ' + user_input)
+                # await self.pubsub_channel.send(user_input)
+                pyttsx3.speak(user_input)
+
+    async def run(self):
+        await self.client.pubsub.subscribe_topics(self.topics)
+        await self.client.start()
+
 
 class Bot(commands.Bot):
 
     def __init__(self):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
-        super().__init__(token=config['keys']['token'], prefix='!', initial_channels=config['options']['channel'].split(','))
+        super().__init__(token=config['keys']['token'], prefix='!',
+                         initial_channels=config['options']['channel'].split(','))
         self.client_id = config['keys']['client_id']
         self.client_secret = config['keys']['client_secret']
         self.client_credentials = requests.post('https://id.twitch.tv/oauth2/token?client_id='
-                                            + self.client_id
-                                            + '&client_secret='
-                                            + self.client_secret
-                                            + '&grant_type=client_credentials'
-                                            + '&scope='
-                                            + '').json()
+                                                + self.client_id
+                                                + '&client_secret='
+                                                + self.client_secret
+                                                + '&grant_type=client_credentials'
+                                                + '&scope='
+                                                + '').json()
         print(json.dumps(self.client_credentials, indent=4, sort_keys=True))
         self.wiki_cooldown = False
         openai.api_key = config['keys']['openai_api_key']
-        #engines = openai.Engine.list()
-        #print(engines.data)
+        # engines = openai.Engine.list()
+        # print(engines.data)
 
     async def event_ready(self):
         print(f'Logged in as | {self.nick}')
         print(f'User id is | {self.user_id}')
 
+        ps = PubSub()
+        await ps.run()
+
     async def event_message(self, message):
         if message.echo:
             return
-        
+
+        if message.author.name == self.nick:
+            return
+
         print(message.author.name + ': ' + message.content)
-        
+
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
-        chatters = json.loads(config.get('variables','chatters'))
+        chatters = json.loads(config.get('variables', 'chatters'))
         if message.author.name not in chatters:
             chatters.append(message.author.name)
             config['variables']['chatters'] = json.dumps(chatters)
@@ -65,19 +108,23 @@ class Bot(commands.Bot):
                 '''
 
                 if message.author.is_subscriber or message.author.is_mod or message.author.is_vip:
-                    completion = openai.Completion.create(max_tokens = 128, engine=config['options']['ai_engine'], prompt=message.content)
-                    #print(json.dumps(completion, indent=4, sort_keys=True))
-                    moderation = openai.Moderation.create(input=completion.choices[0].text, model = 'text-moderation-stable')
-                    #print(json.dumps(moderation, indent=4, sort_keys=True))
+                    completion = openai.Completion.create(temperature=int(config['options']['temperature']), max_tokens=128,
+                                                          engine=config['options']['ai_engine'], prompt=message.content)
+                    # print(json.dumps(completion, indent=4, sort_keys=True))
+                    moderation = openai.Moderation.create(input=completion.choices[0].text,
+                                                          model='text-moderation-stable')
+                    # print(json.dumps(moderation, indent=4, sort_keys=True))
+
                     if not moderation.results[0]['flagged']:
                         print(self.nick + ': ' + completion.choices[0].text.strip())
-                        await message.channel.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
+                        await message.channel.send(
+                            completion.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
                     else:
                         print(self.nick + ': Response Flagged')
-                        await message.channel.send('Response Flagged')              
+                        await message.channel.send('Response Flagged')
 
                 ###---END EDIT ZONE---###
-            
+
         await self.handle_commands(message)
 
     @routines.routine(iterations=1)
@@ -87,8 +134,8 @@ class Bot(commands.Bot):
         countdown = int(config['options']['wiki_cooldown'])
         while countdown != 0:
             await asyncio.sleep(1)
-            print(countdown,end=" ")
-            countdown-=1
+            print(countdown, end=" ")
+            countdown -= 1
         self.wiki_cooldown = False
 
     @commands.command()
@@ -96,26 +143,26 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['wiki_enabled'] == 'True':
-            if self.wiki_cooldown == False:
+            if not self.wiki_cooldown:
                 wikipedia.set_lang("en")
 
                 try:
                     try:
-                        p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=2, auto_suggest=False)
+                        p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=3, auto_suggest=False)
                     except wikipedia.DisambiguationError as e:
                         print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
-                        p = wikipedia.summary(str(e.options[0]), sentences=2, auto_suggest=False)
+                        p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
                 except:
                     try:
-                        p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=2, auto_suggest=True)
+                        p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=3, auto_suggest=True)
                     except wikipedia.DisambiguationError as e:
                         print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
-                        p = wikipedia.summary(str(e.options[0]), sentences=2, auto_suggest=False)
+                        p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
                     except wikipedia.PageError as e:
                         p = str(e)
-                    
+
                 print(self.nick + ": " + p)
-                await ctx.send(p.replace('\r','').replace('\n','')[:500])
+                await ctx.send(p.replace('\r', '').replace('\n', '')[:500])
                 self.wiki_cooldown = True
                 self.wiki_cooldown_routine.start()
 
@@ -124,7 +171,8 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['followage_enabled'] == 'True':
-            headers = {'Client-ID': self.client_id, 'Authorization':'Bearer ' + self.client_credentials['access_token']}
+            headers = {'Client-ID': self.client_id,
+                       'Authorization': 'Bearer ' + self.client_credentials['access_token']}
             url_to = 'https://api.twitch.tv/helix/users?login=' + ctx.channel.name
             to_id = requests.get(url_to, headers=headers).json()['data'][0]['id']
             url_from = 'https://api.twitch.tv/helix/users?login=' + ctx.author.name
@@ -153,8 +201,8 @@ class Bot(commands.Bot):
                     string += str(time.hours) + ' hour '
                 elif time.hours > 1:
                     string += str(time.hours) + ' hours '
-                print(self.nick + ': ' + string + 'patche5Love')
-                await ctx.send(string + 'patche5Love')
+                print(self.nick + ': ' + string)
+                await ctx.send(string)
             except Exception as e:
                 print(e)
                 print(self.nick + ': ' + ctx.author.name + ' is not following')
@@ -165,17 +213,19 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['ai_enabled'] == 'True':
-            completion = openai.Completion.create(max_tokens = 128, engine=config['options']['ai_engine'], prompt=ctx.message.content.split(' ', 1)[1])
-            #print(json.dumps(completion, indent=4, sort_keys=True))
-            moderation = openai.Moderation.create(input=completion.choices[0].text, model = 'text-moderation-stable')
-            #print(json.dumps(moderation, indent=4, sort_keys=True))
+            completion = openai.Completion.create(temperature=int(config['options']['temperature']), max_tokens=128, engine=config['options']['ai_engine'],
+                                                  prompt=ctx.message.content.split(' ', 1)[1])
+            # print(json.dumps(completion, indent=4, sort_keys=True))
+            moderation = openai.Moderation.create(input=completion.choices[0].text, model='text-moderation-stable')
+            # print(json.dumps(moderation, indent=4, sort_keys=True))
+
             if not moderation.results[0]['flagged']:
                 print(self.nick + ': ' + completion.choices[0].text.strip())
-                await ctx.send(completion.choices[0].text.strip().replace('\r',' ').replace('\n',' ')[:500])
+                await ctx.send(completion.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
             else:
                 print(self.nick + ': Response Flagged')
                 await ctx.send('Response Flagged')
-                
+
     @commands.command()
     async def define(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -183,9 +233,10 @@ class Bot(commands.Bot):
         if config['options']['define_enabled'] == 'True':
             config = configparser.ConfigParser()
             config.read(r'keys.ini')
-            url =  'https://www.dictionaryapi.com/api/v3/references/learners/json/' + ctx.message.content.split(' ', 1)[1] + '?key=' + config['keys']['merriamwebster_api_key']
+            url = 'https://www.dictionaryapi.com/api/v3/references/learners/json/' + ctx.message.content.split(' ', 1)[
+                1] + '?key=' + config['keys']['merriamwebster_api_key']
             r = requests.get(url).json()
-            #print(json.dumps(r, indent=4, sort_keys=True))
+            # print(json.dumps(r, indent=4, sort_keys=True))
             try:
                 definition = str(r[0]['shortdef'][0])
                 print(self.nick + ': ' + definition)
@@ -202,7 +253,7 @@ class Bot(commands.Bot):
             translated = GoogleTranslator(source='auto', target='en').translate(ctx.message.content.split(' ', 1)[1])
             print(self.nick + ': ' + translated)
             await ctx.send(translated[:500])
-                
+
     @commands.command()
     async def weather(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -211,47 +262,56 @@ class Bot(commands.Bot):
             owm = OWM(config['keys']['owm_api_key'])
             mgr = owm.weather_manager()
             try:
-                #F = 1.8(K - 273) + 32
-                #C = K – 273.15
-                g = geocoders.GoogleV3(api_key = config['keys']['google_api_key'], domain='maps.googleapis.com')
+                # F = 1.8(K - 273) + 32
+                # C = K – 273.15
+                g = geocoders.GoogleV3(api_key=config['keys']['google_api_key'], domain='maps.googleapis.com')
                 observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
                 one_call = mgr.one_call(lat=observation.location.lat, lon=observation.location.lon)
-                place_object = g.reverse((observation.location.lat,observation.location.lon))
-                #print(json.dumps(place_object.raw, indent=4, sort_keys=True))
-                place = ''
+                place_object = g.reverse((observation.location.lat, observation.location.lon))
+                # print(json.dumps(place_object.raw, indent=4, sort_keys=True))
+
+                city = ''
+                state = ''
+                country = ''
+                plus_code = ''
+
                 for item in place_object.raw['address_components']:
                     if 'locality' in item['types']:
                         city = item['long_name']
-                        place +=  city + ', '
-                        break
-                for item in place_object.raw['address_components']:
                     if 'administrative_area_level_1' in item['types']:
                         state = item['short_name']
-                        place +=  state + ', '
-                        break
-                for item in place_object.raw['address_components']:
                     if 'country' in item['types']:
                         country = item['short_name']
-                        place +=  country
-                        break
-                for item in place_object.raw['address_components']:
-                    if 'plus_code' in item['types'] and place == '':
-                        place = item['short_name']
-                        break
-                
+                    if 'plus_code' in item['types']:
+                        plus_code = item['short_name']
+
+                place = ''
+                if city != '':
+                    place += city + ', '
+                if state != '':
+                    place += state + ', '
+                if country != '':
+                    place += country
+                if place == '':
+                    place += plus_code
+
                 temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
                 temp_c = int(observation.weather.temp['temp'] - 273.15)
                 f_temp_f = int(one_call.forecast_daily[1].temperature('fahrenheit').get('max', None))
                 f_temp_c = int(one_call.forecast_daily[1].temperature('celsius').get('max', None))
-                print(self.nick + ': The temperture in ' + place + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.detailed_status
-                      + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' + one_call.forecast_daily[1].detailed_status)
-                await ctx.send('The temperture in ' + place + ' is ' + str(temp_f) + '°F (' + str(temp_c) + '°C) and ' + observation.weather.detailed_status
-                               + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' + one_call.forecast_daily[1].detailed_status)
+                print(self.nick + ': The temperature in ' + place + ' is ' + str(temp_f) + '°F (' + str(
+                    temp_c) + '°C) and ' + observation.weather.detailed_status
+                      + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' + one_call.forecast_daily[
+                          1].detailed_status)
+                await ctx.send('The temperature in ' + place + ' is ' + str(temp_f) + '°F (' + str(
+                    temp_c) + '°C) and ' + observation.weather.detailed_status
+                               + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' +
+                               one_call.forecast_daily[1].detailed_status)
             except Exception as e:
                 print(e)
                 print(self.nick + ': Location ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
                 await ctx.send('Location ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
-            
+
     @commands.command()
     async def reddit(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -263,10 +323,10 @@ class Bot(commands.Bot):
 
     @commands.command()
     async def help(self, ctx: commands.Context):
-        output = ''
+        output = 'Enabled Commands Are: '
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
-        
+
         if config['options']['wiki_enabled'] == 'True':
             output += '!wiki '
         if config['options']['followage_enabled'] == 'True':
@@ -287,7 +347,7 @@ class Bot(commands.Bot):
             output += '!exchange '
         if config['options']['fact_enabled'] == 'True':
             output += '!fact '
-                
+
         print(self.nick + ': ' + output)
         await ctx.send(output)
 
@@ -296,16 +356,16 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['time_enabled'] == 'True':
-            g = geocoders.GoogleV3(api_key = config['keys']['google_api_key'], domain='maps.googleapis.com')
+            g = geocoders.GoogleV3(api_key=config['keys']['google_api_key'], domain='maps.googleapis.com')
             place, (lat, lng) = g.geocode(ctx.message.content.split(' ', 1)[1])
-            tz = g.reverse_timezone((lat,lng))
+            tz = g.reverse_timezone((lat, lng))
             tz_object = timezone(str(tz))
             newtime = datetime.datetime.now(tz_object)
             print(self.nick + ': The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
             await ctx.send('The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
-            
+
     @commands.command()
-    async def exchange(self, ctx: commands.Context, cur_from = 'usd' , cur_to = 'eur' , amount = '1'):
+    async def exchange(self, ctx: commands.Context, cur_from='usd', cur_to='eur', amount='1'):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['exchange_enabled'] == 'True':
@@ -321,54 +381,63 @@ class Bot(commands.Bot):
         if config['options']['fact_enabled'] == 'True':
             url = 'https://uselessfacts.jsph.pl/random.json?language=en'
             fact = requests.get(url).json()
-            #print(json.dumps(fact, indent=4, sort_keys=True))
+            # print(json.dumps(fact, indent=4, sort_keys=True))
             print(self.nick + ': ' + fact['text'])
             await ctx.send(fact['text'])
-        
+
     def getjoke(self, url):
         headers = {'User-agent': 'pywiki'}
         r = requests.get(url, headers=headers).json()
         joke = ''
         while joke == '':
-            post = r['data']['children'][random.randint(0,len(r['data']['children'])-1)]
-            #print(json.dumps(title, indent=4, sort_keys=True))
+            post = r['data']['children'][random.randint(0, len(r['data']['children']) - 1)]
+            # print(json.dumps(title, indent=4, sort_keys=True))
             subreddit = post['data']['subreddit']
             title = post['data']['title']
             output = post['data']['selftext']
             if (len(output) < 100 and not
-                re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', output)):
+            re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', output)):
                 if (title.endswith('?') or
-                    title.endswith('.') or
-                    title.endswith('…') or
-                    title.endswith(',') or
-                    len(output) == 0):
+                        title.endswith('.') or
+                        title.endswith('…') or
+                        title.endswith(',') or
+                        len(output) == 0):
                     text = title + ' '
                 else:
                     text = title + '…'
-                joke = text + output.replace('\r',' ').replace('\n',' ') + ' r/' + subreddit
+                joke = text + output.replace('\r', ' ').replace('\n', ' ') + ' r/' + subreddit
                 joke = re.split("edit:", joke, flags=re.IGNORECASE)[0]
             else:
                 print(title + ' ' + output + ' r/' + subreddit)
-                print ('regexed')
+                print('regexed')
         return joke
-    
+
     def reddit_get(self, *args):
-        random.seed()            
+        random.seed()
         headers = {'User-agent': 'pywiki'}
 
         headlines = []
-        
+
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
 
-        urls = json.loads(config.get('variables','reddit_urls'))
-        
+        urls = json.loads(config.get('variables', 'reddit_urls'))
+
         random.shuffle(urls)
 
         headlines.append(self.getjoke(urls[0]))
-                
-        random.shuffle(headlines)
-        return(headlines[0])
 
-bot = Bot()
-bot.run()
+        random.shuffle(headlines)
+        return (headlines[0])
+
+
+def main():
+    try:
+        bot = Bot()
+        bot.run()
+    finally:
+        sys.exit()
+
+
+if __name__ == '__main__':
+    main()
