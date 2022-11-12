@@ -1,3 +1,4 @@
+import py2snes
 import twitchio
 from twitchio.ext import pubsub
 from twitchio.ext import commands
@@ -23,6 +24,7 @@ import pycountry
 
 
 class PubSub(object):
+
     def __init__(self):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
@@ -64,11 +66,6 @@ class PubSub(object):
             '''
             ###---END EDIT ZONE---###
 
-    async def run(self):
-        await self.client.pubsub.subscribe_topics(self.topics)
-        await self.client.start()
-
-
 class Bot(commands.Bot):
 
     def __init__(self):
@@ -85,18 +82,20 @@ class Bot(commands.Bot):
                                                 + '&grant_type=client_credentials'
                                                 + '&scope='
                                                 + '').json()
-        print(json.dumps(self.client_credentials, indent=4, sort_keys=True))
+        # print(json.dumps(self.client_credentials, indent=4, sort_keys=True))
         self.wiki_cooldown = False
         openai.api_key = config['keys']['openai_api_key']
         # engines = openai.Engine.list()
         # print(engines.data)
+        self.ps = PubSub()
 
     async def event_ready(self):
         print(f'Logged in as | {self.nick}')
         print(f'User id is | {self.user_id}')
 
-        ps = PubSub()
-        await ps.run()
+        await self.snes_connect()
+        await self.ps.client.pubsub.subscribe_topics(self.ps.topics)
+        await self.ps.client.start()
 
     async def event_message(self, message):
         if message.echo:
@@ -137,6 +136,19 @@ class Bot(commands.Bot):
                 ###---END EDIT ZONE---###
 
         await self.handle_commands(message)
+
+    async def snes_connect(self):
+        self.snes = py2snes.snes()
+        await self.snes.connect()
+        devices = await self.snes.DeviceList()
+        print(devices)
+        try:
+            await self.snes.Attach(devices[0])
+            print(await self.snes.Info())
+            self.snes_connected = 1;
+        except Exception as e:
+            print(e + ' SD2SNES Not Detected')
+            self.snes_connected = 0;
 
     @routines.routine(iterations=1)
     async def wiki_cooldown_routine(self):
