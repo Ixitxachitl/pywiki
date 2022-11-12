@@ -35,10 +35,12 @@ class PubSub(object):
         self.client = twitchio.Client(token=self.my_token, initial_channels=[self.users_channel])
         self.client.pubsub = pubsub.PubSubPool(self.client)
         self.topics = [pubsub.channel_points(self.users_oauth_token)[self.users_channel_id]]
+        self.snes = py2snes.snes()
 
         @self.client.event()
         async def event_ready():
             print("Pubsub Ready")
+            await self.snes_connect()
 
         @self.client.event()
         async def event_pubsub_channel_points(event: pubsub.PubSubChannelPointsMessage):
@@ -58,6 +60,12 @@ class PubSub(object):
                 # print(self.client.nick + ': ' + user_input)
                 # await channel.send(user_input)
                 pyttsx3.speak(user_input)
+            elif event_id == "Mushroom":
+                await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x01', 16)])]))
+            elif event_id == "Cape":
+                await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x02', 16)])]))
+            elif event_id == "Fire Flower":
+                await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x03', 16)])]))
             '''
             elif event_id == 'Echo':
                 user_input = event._data['message']['data']['redemption']['user_input']
@@ -65,6 +73,18 @@ class PubSub(object):
                 await channel.send(user_input)
             '''
             ###---END EDIT ZONE---###
+
+    async def snes_connect(self):
+        await self.snes.connect()
+        devices = await self.snes.DeviceList()
+        print(devices)
+        try:
+            await self.snes.Attach(devices[0])
+            print(await self.snes.Info())
+            self.snes_connected = 1;
+        except Exception as e:
+            print(e + ' SD2SNES Not Detected')
+            self.snes_connected = 0;
 
 class Bot(commands.Bot):
 
@@ -93,7 +113,6 @@ class Bot(commands.Bot):
         print(f'Logged in as | {self.nick}')
         print(f'User id is | {self.user_id}')
 
-        await self.snes_connect()
         await self.ps.client.pubsub.subscribe_topics(self.ps.topics)
         await self.ps.client.start()
 
@@ -136,19 +155,6 @@ class Bot(commands.Bot):
                 ###---END EDIT ZONE---###
 
         await self.handle_commands(message)
-
-    async def snes_connect(self):
-        self.snes = py2snes.snes()
-        await self.snes.connect()
-        devices = await self.snes.DeviceList()
-        print(devices)
-        try:
-            await self.snes.Attach(devices[0])
-            print(await self.snes.Info())
-            self.snes_connected = 1;
-        except Exception as e:
-            print(e + ' SD2SNES Not Detected')
-            self.snes_connected = 0;
 
     @routines.routine(iterations=1)
     async def wiki_cooldown_routine(self):
