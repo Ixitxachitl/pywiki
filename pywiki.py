@@ -41,7 +41,8 @@ class PubSub(object):
         @self.client.event()
         async def event_pubsub_channel_points(event: pubsub.PubSubChannelPointsMessage):
             # print(json.dumps(event._data, indent=4, sort_keys=True))
-            channel = self.client.get_channel(self.users_channel)
+            channel_name = await self.client.fetch_channels([event.channel_id])
+            channel = self.client.get_channel(channel_name[0].user.name)
             event_id = event._data['message']['data']['redemption']['reward']['title']
 
             ###---EDIT HERE FOR CUSTOM REDEMPTIONS---###
