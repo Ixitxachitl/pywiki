@@ -30,21 +30,25 @@ class PubSub(object):
         self.users_oauth_token = config['keys']['pubsub_oauth_token']
         self.users_channel = config['options']['pubsub_channel']
         self.users_channel_id = int(config['options']['pubsub_channel_id'])
-        self.client = twitchio.Client(token=self.my_token)
+        self.client = twitchio.Client(token=self.my_token, initial_channels=[self.users_channel])
         self.client.pubsub = pubsub.PubSubPool(self.client)
-        self.pubsub_channel = twitchio.Channel(self.users_channel, self.client._connection)
         self.topics = [pubsub.channel_points(self.users_oauth_token)[self.users_channel_id]]
+
+        @self.client.event()
+        async def event_ready():
+            print("Pubsub Ready")
 
         @self.client.event()
         async def event_pubsub_channel_points(event: pubsub.PubSubChannelPointsMessage):
             # print(json.dumps(event._data, indent=4, sort_keys=True))
+            channel = self.client.get_channel(self.users_channel)
             event_id = event._data['message']['data']['redemption']['reward']['title']
 
             ###---EDIT HERE FOR CUSTOM REDEMPTIONS---###
             if event_id == 'Eggs':
                 print(self.client.nick + ': 🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
                                          '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
-                await self.pubsub_channel.send('🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
+                await channel.send('🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
                                                '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
             elif event_id == 'TTS':
                 user_input = event._data['message']['data']['redemption']['user_input']
@@ -57,7 +61,6 @@ class PubSub(object):
                 print(self.client.nick + ': ' + user_input)
                 await self.pubsub_channel.send(user_input)
             '''
-
             ###---END EDIT ZONE---###
 
     async def run(self):
@@ -397,7 +400,7 @@ class Bot(commands.Bot):
     def ai_complete(message):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
-        completion = openai.Completion.create(temperature=int(config['options']['temperature']),
+        completion = openai.Completion.create(temperature=float(config['options']['temperature']),
                                               max_tokens=int(config['options']['tokens']),
                                               engine=config['options']['ai_engine'],
                                               prompt=message)
