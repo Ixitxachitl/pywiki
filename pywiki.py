@@ -39,6 +39,8 @@ class PubSub(object):
         async def event_pubsub_channel_points(event: pubsub.PubSubChannelPointsMessage):
             # print(json.dumps(event._data, indent=4, sort_keys=True))
             event_id = event._data['message']['data']['redemption']['reward']['title']
+
+            ###---EDIT HERE FOR CUSTOM REDEMPTIONS---###
             if event_id == 'Eggs':
                 print(self.client.nick + ': 🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
                                          '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
@@ -49,6 +51,14 @@ class PubSub(object):
                 # print(self.client.nick + ': ' + user_input)
                 # await self.pubsub_channel.send(user_input)
                 pyttsx3.speak(user_input)
+            '''
+            elif event_id == 'Echo':
+                user_input = event._data['message']['data']['redemption']['user_input']
+                print(self.client.nick + ': ' + user_input)
+                await self.pubsub_channel.send(user_input)
+            '''
+
+            ###---END EDIT ZONE---###
 
     async def run(self):
         await self.client.pubsub.subscribe_topics(self.topics)
@@ -112,22 +122,14 @@ class Bot(commands.Bot):
                 '''
 
                 if message.author.is_subscriber or message.author.is_mod or message.author.is_vip:
-                    completion = openai.Completion.create(temperature=int(config['options']['temperature']),
-                                                          max_tokens=int(config['options']['tokens']),
-                                                          engine=config['options']['ai_engine'], prompt=message.content)
-                    # print(json.dumps(completion, indent=4, sort_keys=True))
-                    moderation = openai.Moderation.create(input=completion.choices[0].text,
-                                                          model='text-moderation-stable')
-                    # print(json.dumps(moderation, indent=4, sort_keys=True))
-
-                    if not moderation.results[0]['flagged']:
-                        print(self.nick + ': ' + completion.choices[0].text.strip())
+                    response = self.ai_complete(message.content)
+                    try:
+                        print(self.nick + ': ' + response.choices[0].text.strip())
                         await message.channel.send(
-                            completion.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
-                    else:
-                        print(self.nick + ': Response Flagged')
-                        await message.channel.send('Response Flagged')
-
+                            response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
+                    except AttributeError as e:
+                        print(self.nick + ': ' + response)
+                        await message.channel.send(response)
                 ###---END EDIT ZONE---###
 
         await self.handle_commands(message)
@@ -218,20 +220,15 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['ai_enabled'] == 'True':
-            completion = openai.Completion.create(temperature=int(config['options']['temperature']),
-                                                  max_tokens=int(config['options']['tokens']),
-                                                  engine=config['options']['ai_engine'],
-                                                  prompt=ctx.message.content.split(' ', 1)[1])
-            # print(json.dumps(completion, indent=4, sort_keys=True))
-            moderation = openai.Moderation.create(input=completion.choices[0].text, model='text-moderation-stable')
-            # print(json.dumps(moderation, indent=4, sort_keys=True))
 
-            if not moderation.results[0]['flagged']:
-                print(self.nick + ': ' + completion.choices[0].text.strip())
-                await ctx.send(completion.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
-            else:
-                print(self.nick + ': Response Flagged')
-                await ctx.send('Response Flagged')
+            response = self.ai_complete(ctx.message.content.split(' ', 1)[1])
+
+            try:
+                print(self.nick + ': ' + response.choices[0].text.strip())
+                await ctx.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
+            except AttributeError as e:
+                print(self.nick + ': ' + response)
+                await ctx.send(response)
 
     @commands.command()
     async def define(self, ctx: commands.Context):
@@ -396,7 +393,25 @@ class Bot(commands.Bot):
             print(self.nick + ': ' + fact['text'])
             await ctx.send(fact['text'])
 
-    def getjoke(self, url):
+    @staticmethod
+    def ai_complete(message):
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        completion = openai.Completion.create(temperature=int(config['options']['temperature']),
+                                              max_tokens=int(config['options']['tokens']),
+                                              engine=config['options']['ai_engine'],
+                                              prompt=message)
+        print(json.dumps(completion, indent=4, sort_keys=True))
+        moderation = openai.Moderation.create(input=completion.choices[0].text, model='text-moderation-stable')
+        print(json.dumps(moderation, indent=4, sort_keys=True))
+
+        if not moderation.results[0]['flagged']:
+            return completion
+        else:
+            return 'Response Flagged'
+
+    @staticmethod
+    def getjoke(url):
         headers = {'User-agent': 'pywiki'}
         r = requests.get(url, headers=headers).json()
         joke = ''
@@ -416,8 +431,8 @@ class Bot(commands.Bot):
                     text = title + ' '
                 else:
                     text = title + '…'
-                joke = text + output.replace('\r', ' ').replace('\n', ' ') + ' r/' + subreddit
-                joke = re.split("edit:", joke, flags=re.IGNORECASE)[0]
+                joke = text + output.replace('\r', ' ').replace('\n', ' ')
+                joke = re.split("edit:", joke, flags=re.IGNORECASE)[0] + ' r/' + subreddit
             else:
                 print(title + ' ' + output + ' r/' + subreddit)
                 print('regexed')
@@ -439,7 +454,7 @@ class Bot(commands.Bot):
         headlines.append(self.getjoke(urls[0]))
 
         random.shuffle(headlines)
-        return (headlines[0])
+        return headlines[0]
 
 
 def main():
