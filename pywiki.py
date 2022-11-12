@@ -60,7 +60,7 @@ class PubSub(object):
             elif event_id == 'Echo':
                 user_input = event._data['message']['data']['redemption']['user_input']
                 print(self.client.nick + ': ' + user_input)
-                await self.pubsub_channel.send(user_input)
+                await channel.send(user_input)
             '''
             ###---END EDIT ZONE---###
 
