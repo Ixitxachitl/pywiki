@@ -38,58 +38,6 @@ class PubSub(object):
         self.client = twitchio.Client(token=self.my_token, initial_channels=[self.users_channel])
         self.client.pubsub = pubsub.PubSubPool(self.client)
         self.topics = [pubsub.channel_points(self.users_oauth_token)[self.users_channel_id]]
-        self.snes_connected = 0
-        self.snes = py2snes.snes()
-
-        @self.client.event()
-        async def event_ready():
-            print("Pubsub Ready")
-            await self.snes_connect()
-
-        @self.client.event()
-        async def event_pubsub_channel_points(event: pubsub.PubSubChannelPointsMessage):
-            # print(json.dumps(event._data, indent=4, sort_keys=True))
-            channel_name = await self.client.fetch_channels([event.channel_id])
-            channel = self.client.get_channel(channel_name[0].user.name)
-            event_id = event._data['message']['data']['redemption']['reward']['title']
-
-            ###---EDIT HERE FOR CUSTOM REDEMPTIONS---###
-            if event_id == 'Eggs':
-                print(self.client.nick + ': 🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
-                                         '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
-                await channel.send('🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
-                                               '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
-            elif event_id == 'TTS':
-                user_input = event._data['message']['data']['redemption']['user_input']
-                # print(self.client.nick + ': ' + user_input)
-                # await channel.send(user_input)
-                pyttsx3.speak(user_input)
-            elif event_id == "Mushroom":
-                await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x01', 16)])]))
-            elif event_id == "Cape":
-                await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x02', 16)])]))
-            elif event_id == "Fire Flower":
-                await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x03', 16)])]))
-
-            '''
-            elif event_id == 'Echo':
-                user_input = event._data['message']['data']['redemption']['user_input']
-                print(self.client.nick + ': ' + user_input)
-                await channel.send(user_input)
-            '''
-            ###---END EDIT ZONE---###
-
-    async def snes_connect(self):
-        await self.snes.connect()
-        devices = await self.snes.DeviceList()
-        print(devices)
-        try:
-            await self.snes.Attach(devices[0])
-            print(await self.snes.Info())
-            self.snes_connected = 1
-        except Exception as e:
-            print(str(e) + ' SD2SNES Not Detected')
-            self.snes_connected = 0
 
 
 class Bot(commands.Bot):
@@ -97,7 +45,8 @@ class Bot(commands.Bot):
     def __init__(self):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
-        super().__init__(token=config['keys']['token'], prefix='!',
+        self.prefix = '!'
+        super().__init__(token=config['keys']['token'], prefix=self.prefix,
                          initial_channels=config['options']['channel'].split(','))
         self.client_id = config['keys']['client_id']
         self.client_secret = config['keys']['client_secret']
@@ -114,6 +63,67 @@ class Bot(commands.Bot):
         # engines = openai.Engine.list()
         # print(engines.data)
         self.ps = PubSub()
+        self.snes_connected = False
+        self.snes = py2snes.snes()
+
+        @self.ps.client.event()
+        async def event_ready():
+            print("Pubsub Ready")
+            await self.snes_connect()
+
+        @self.ps.client.event()
+        async def event_pubsub_channel_points(event: pubsub.PubSubChannelPointsMessage):
+            # print(json.dumps(event._data, indent=4, sort_keys=True))
+            channel_name = await self.ps.client.fetch_channels([event.channel_id])
+            channel = self.ps.client.get_channel(channel_name[0].user.name)
+            event_id = event._data['message']['data']['redemption']['reward']['title']
+
+            ###---EDIT HERE FOR CUSTOM REDEMPTIONS---###
+            if event_id == 'Eggs':
+                print(self.ps.client.nick + ': 🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
+                                            '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
+                await channel.send('🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
+                                   '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
+            elif event_id == 'TTS':
+                user_input = event._data['message']['data']['redemption']['user_input']
+                # print(self.client.nick + ': ' + user_input)
+                # await channel.send(user_input)
+                pyttsx3.speak(user_input)
+            elif event_id == "Mushroom":
+                if self.snes_connected:
+                    await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x01', 16)])]))
+                print(self.ps.client.nick + ': 🍄')
+                await channel.send('🍄')
+            elif event_id == "Cape":
+                if self.snes_connected:
+                    await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x02', 16)])]))
+                print(self.ps.client.nick + ': 🪶')
+                await channel.send('🪶')
+            elif event_id == "Fire Flower":
+                if self.snes_connected:
+                    await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x03', 16)])]))
+                print(self.ps.client.nick + ': 🌹')
+                await channel.send('🌹')
+
+            '''
+            elif event_id == 'Echo':
+                user_input = event._data['message']['data']['redemption']['user_input']
+                print(self.client.nick + ': ' + user_input)
+                await channel.send(user_input)
+            '''
+            ###---END EDIT ZONE---###
+
+    async def snes_connect(self):
+        await self.snes.connect()
+        devices = await self.snes.DeviceList()
+        print(devices)
+        try:
+            await self.snes.Attach(devices[0])
+            print(await self.snes.Info())
+            self.snes_connected = True
+        except Exception as e:
+            print(str(e) + ' SD2SNES Not Detected')
+            self.snes_connected = False
 
     async def event_ready(self):
         print(f'Logged in as | {self.nick}')
@@ -129,8 +139,7 @@ class Bot(commands.Bot):
         if message.author.name == self.nick:
             return
 
-        if message.content.startswith('! '):
-            print('yes')
+        if message.content.startswith(self.prefix + ' '):
             message.content = message.content[0:1] + message.content[2:].strip()
 
         print(message.author.name + ': ' + message.content)
@@ -285,10 +294,11 @@ class Bot(commands.Bot):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['translate_enabled'] == 'True':
-            translated = GoogleTranslator(source='auto', target='en').translate(ctx.message.content.split(' ', 1)[1])
             language_short = single_detection(ctx.message.content.split(' ', 1)[1], api_key=config['keys'][
                 'detect_language_api_key'])
             language_long = pycountry.languages.get(alpha_2=language_short)
+            translated = GoogleTranslator(source=language_short, target='en').translate(
+                ctx.message.content.split(' ', 1)[1])
             response = 'From ' + language_long.name + ': ' + translated
             print(self.nick + ': ' + response)
             await ctx.send(response[:500])
@@ -358,7 +368,7 @@ class Bot(commands.Bot):
         if config['options']['reddit_enabled'] == 'True':
             joke = self.reddit_get()
             q = queue.Queue()
-            x = threading.Thread(target=self.reddit_confirm, args=('Confirm?',joke, q))
+            x = threading.Thread(target=self.reddit_confirm, args=('Confirm?', joke, q))
             x.start()
             while x.is_alive():
                 await asyncio.sleep(0)
