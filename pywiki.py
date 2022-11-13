@@ -69,7 +69,6 @@ class Bot(commands.Bot):
         @self.ps.client.event()
         async def event_ready():
             print("Pubsub Ready")
-            await self.snes_connect()
 
         @self.ps.client.event()
         async def event_pubsub_channel_points(event: pubsub.PubSubChannelPointsMessage):
@@ -91,17 +90,17 @@ class Bot(commands.Bot):
                 pyttsx3.speak(user_input)
             elif event_id == "Mushroom":
                 if self.snes_connected:
-                    await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x01', 16)])]))
+                    await self.snes.PutAddress([(int('0xF50019', 16), [int('0x01', 16)])])
                 print(self.ps.client.nick + ': 🍄')
                 await channel.send('🍄')
             elif event_id == "Cape":
                 if self.snes_connected:
-                    await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x02', 16)])]))
+                    await self.snes.PutAddress([(int('0xF50019', 16), [int('0x02', 16)])])
                 print(self.ps.client.nick + ': 🪶')
                 await channel.send('🪶')
             elif event_id == "Fire Flower":
                 if self.snes_connected:
-                    await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x03', 16)])]))
+                    await self.snes.PutAddress([(int('0xF50019', 16), [int('0x03', 16)])])
                 print(self.ps.client.nick + ': 🌹')
                 await channel.send('🌹')
 
@@ -130,6 +129,7 @@ class Bot(commands.Bot):
         print(f'User id is | {self.user_id}')
 
         await self.ps.client.pubsub.subscribe_topics(self.ps.topics)
+        await self.snes_connect()
         await self.ps.client.start()
 
     async def event_message(self, message):
