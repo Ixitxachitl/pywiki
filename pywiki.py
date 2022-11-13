@@ -1,7 +1,6 @@
+import ctypes
 import queue
 import threading
-import tkinter.messagebox
-
 import py2snes
 import twitchio
 from twitchio.ext import pubsub
@@ -434,7 +433,12 @@ class Bot(commands.Bot):
 
     @staticmethod
     def reddit_confirm(title, message, q):
-        q.put(tkinter.messagebox.askyesno(title, message))
+        option = ctypes.windll.user32.MessageBoxW(None, message, title, 0x01 | 0x30 | 0x00001000)
+        if option == 1:
+            option = True
+        else:
+            option = False
+        q.put(option)
 
     @staticmethod
     def ai_complete(message):
