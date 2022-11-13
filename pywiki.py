@@ -130,10 +130,11 @@ class Bot(commands.Bot):
         print(f'Logged in as | {self.nick}')
         print(f'User id is | {self.user_id}')
 
-        await self.ps.client.pubsub.subscribe_topics(self.ps.topics)
         if config['options']['snes_enabled'] == 'True':
             await self.snes_connect()
-        await self.ps.client.start()
+        if config['options']['pubsub_enabled'] == 'True':
+            await self.ps.client.pubsub.subscribe_topics(self.ps.topics)
+            await self.ps.client.start()
 
     async def event_message(self, message):
         if message.echo:
