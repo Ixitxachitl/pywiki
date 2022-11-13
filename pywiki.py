@@ -1,3 +1,7 @@
+import queue
+import threading
+import tkinter.messagebox
+
 import py2snes
 import twitchio
 from twitchio.ext import pubsub
@@ -35,6 +39,7 @@ class PubSub(object):
         self.client = twitchio.Client(token=self.my_token, initial_channels=[self.users_channel])
         self.client.pubsub = pubsub.PubSubPool(self.client)
         self.topics = [pubsub.channel_points(self.users_oauth_token)[self.users_channel_id]]
+        self.snes_connected = 0
         self.snes = py2snes.snes()
 
         @self.client.event()
@@ -66,6 +71,7 @@ class PubSub(object):
                 await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x02', 16)])]))
             elif event_id == "Fire Flower":
                 await self.snes.PutAddress(([(int('0xF50019', 16), [int('0x03', 16)])]))
+
             '''
             elif event_id == 'Echo':
                 user_input = event._data['message']['data']['redemption']['user_input']
@@ -81,10 +87,11 @@ class PubSub(object):
         try:
             await self.snes.Attach(devices[0])
             print(await self.snes.Info())
-            self.snes_connected = 1;
+            self.snes_connected = 1
         except Exception as e:
-            print(e + ' SD2SNES Not Detected')
-            self.snes_connected = 0;
+            print(str(e) + ' SD2SNES Not Detected')
+            self.snes_connected = 0
+
 
 class Bot(commands.Bot):
 
@@ -108,6 +115,7 @@ class Bot(commands.Bot):
         # engines = openai.Engine.list()
         # print(engines.data)
         self.ps = PubSub()
+        self.q = queue.Queue()
 
     async def event_ready(self):
         print(f'Logged in as | {self.nick}')
@@ -189,7 +197,6 @@ class Bot(commands.Bot):
                         p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
                     except wikipedia.PageError as e:
                         p = str(e)
-
                 print(self.nick + ": " + p)
                 await ctx.send(p.replace('\r', '').replace('\n', '')[:500])
                 self.wiki_cooldown = True
@@ -348,8 +355,14 @@ class Bot(commands.Bot):
         config.read(r'keys.ini')
         if config['options']['reddit_enabled'] == 'True':
             joke = self.reddit_get()
-            print(self.nick + ': ' + joke)
-            await ctx.send(joke)
+            x = threading.Thread(target=self.reddit_confirm, args=('Confirm?',joke, self.q))
+            x.start()
+            while x.is_alive():
+                await asyncio.sleep(0)
+            result = self.q.get()
+            if result:
+                print(self.nick + ': ' + joke)
+                await ctx.send(joke)
 
     @commands.command()
     async def help(self, ctx: commands.Context):
@@ -414,6 +427,10 @@ class Bot(commands.Bot):
             # print(json.dumps(fact, indent=4, sort_keys=True))
             print(self.nick + ': ' + fact['text'])
             await ctx.send(fact['text'])
+
+    @staticmethod
+    def reddit_confirm(title, message, q):
+        q.put(tkinter.messagebox.askyesno(title, message))
 
     @staticmethod
     def ai_complete(message):
