@@ -115,7 +115,6 @@ class Bot(commands.Bot):
         # engines = openai.Engine.list()
         # print(engines.data)
         self.ps = PubSub()
-        self.q = queue.Queue()
 
     async def event_ready(self):
         print(f'Logged in as | {self.nick}')
@@ -355,11 +354,12 @@ class Bot(commands.Bot):
         config.read(r'keys.ini')
         if config['options']['reddit_enabled'] == 'True':
             joke = self.reddit_get()
-            x = threading.Thread(target=self.reddit_confirm, args=('Confirm?',joke, self.q))
+            q = queue.Queue()
+            x = threading.Thread(target=self.reddit_confirm, args=('Confirm?',joke, q))
             x.start()
             while x.is_alive():
                 await asyncio.sleep(0)
-            result = self.q.get()
+            result = q.get()
             if result:
                 print(self.nick + ': ' + joke)
                 await ctx.send(joke)
