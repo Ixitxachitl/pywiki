@@ -130,6 +130,10 @@ class Bot(commands.Bot):
         if message.author.name == self.nick:
             return
 
+        if message.content.startswith('! '):
+            print('yes')
+            message.content = message.content[0:1] + message.content[2:].strip()
+
         print(message.author.name + ': ' + message.content)
 
         config = configparser.ConfigParser()
