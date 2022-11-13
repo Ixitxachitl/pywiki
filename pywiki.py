@@ -125,11 +125,14 @@ class Bot(commands.Bot):
             self.snes_connected = False
 
     async def event_ready(self):
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
         print(f'Logged in as | {self.nick}')
         print(f'User id is | {self.user_id}')
 
         await self.ps.client.pubsub.subscribe_topics(self.ps.topics)
-        await self.snes_connect()
+        if config['options']['snes_enabled'] == 'True':
+            await self.snes_connect()
         await self.ps.client.start()
 
     async def event_message(self, message):
