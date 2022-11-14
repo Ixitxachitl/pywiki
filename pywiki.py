@@ -147,7 +147,7 @@ class Bot(commands.Bot):
                 # print(json.dumps(event._data, indent=4, sort_keys=True))
                 channel_name = await self.fetch_channels([event.channel_id])
                 channel = self.get_channel(channel_name[0].user.name)
-                event_id = event._data['message']['data']['redemption']['reward']['title']
+                event_id = event.reward.title
 
                 ###---EDIT HERE FOR CUSTOM REDEMPTIONS---###
                 if event_id == 'Eggs':
@@ -156,7 +156,7 @@ class Bot(commands.Bot):
                     await channel.send('🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
                                        '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
                 elif event_id == 'TTS':
-                    user_input = event._data['message']['data']['redemption']['user_input']
+                    user_input = event.input
                     # print(self.nick + ': ' + user_input)
                     # await channel.send(user_input)
                     pyttsx3.speak(user_input)
@@ -199,6 +199,7 @@ class Bot(commands.Bot):
     async def event_ready(self):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
+
         print(f'Logged in as | {self.nick}')
         print(f'User id is | {self.user_id}')
 
