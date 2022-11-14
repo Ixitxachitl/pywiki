@@ -543,6 +543,15 @@ class Bot(commands.Bot):
             print(self.nick + ': ' + fact['text'])
             await ctx.send(fact['text'])
 
+    @commands.command()
+    async def clear(self, ctx: commands.Context):
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        if ctx.author.is_mod or ctx.author.is_broadcaster:
+            config['variables']['chatters'] = '[]'
+            with open('keys.ini', 'w') as configfile:
+                config.write(configfile)
+
     @staticmethod
     def reddit_confirm(title, message, q):
         option = ctypes.windll.user32.MessageBoxW(None, message, title, 0x01 | 0x30 | 0x00001000)
