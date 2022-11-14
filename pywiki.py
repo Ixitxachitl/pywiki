@@ -26,20 +26,6 @@ import pyttsx3
 import pycountry
 
 
-class PubSub(object):
-
-    def __init__(self):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        self.my_token = config['keys']['token']
-        self.users_oauth_token = config['keys']['pubsub_oauth_token']
-        self.users_channel = config['options']['pubsub_channel']
-        self.users_channel_id = int(config['options']['pubsub_channel_id'])
-        self.client = twitchio.Client(token=self.my_token, initial_channels=[self.users_channel])
-        self.client.pubsub = pubsub.PubSubPool(self.client)
-        self.topics = [pubsub.channel_points(self.users_oauth_token)[self.users_channel_id]]
-
-
 class Bot(commands.Bot):
 
     def __init__(self):
@@ -62,6 +48,11 @@ class Bot(commands.Bot):
         openai.api_key = config['keys']['openai_api_key']
         # engines = openai.Engine.list()
         # print(engines.data)
+
+        self.my_token = config['keys']['token']
+        self.users_oauth_token = config['keys']['pubsub_oauth_token']
+        self.users_channel = config['options']['pubsub_channel']
+        self.users_channel_id = int(config['options']['pubsub_channel_id'])
 
         self.keysig = {
             'c': {
@@ -139,22 +130,24 @@ class Bot(commands.Bot):
             self.snes = py2snes.snes()
 
         if config['options']['pubsub_enabled'] == 'True':
-            self.ps = PubSub()
+            self.client = twitchio.Client(token=self.my_token, initial_channels=[self.users_channel])
+            self.client.pubsub = pubsub.PubSubPool(self.client)
+            self.topics = [pubsub.channel_points(self.users_oauth_token)[self.users_channel_id]]
 
-            @self.ps.client.event()
+            @self.client.event()
             async def event_ready():
                 print("Pubsub Ready")
 
-            @self.ps.client.event()
+            @self.client.event()
             async def event_pubsub_channel_points(event: pubsub.PubSubChannelPointsMessage):
                 # print(json.dumps(event._data, indent=4, sort_keys=True))
-                channel_name = await self.ps.client.fetch_channels([event.channel_id])
-                channel = self.ps.client.get_channel(channel_name[0].user.name)
+                channel_name = await self.client.fetch_channels([event.channel_id])
+                channel = self.client.get_channel(channel_name[0].user.name)
                 event_id = event._data['message']['data']['redemption']['reward']['title']
 
                 ###---EDIT HERE FOR CUSTOM REDEMPTIONS---###
                 if event_id == 'Eggs':
-                    print(self.ps.client.nick + ': 🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
+                    print(self.client.nick + ': 🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
                                                 '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
                     await channel.send('🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
                                        '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
@@ -166,17 +159,17 @@ class Bot(commands.Bot):
                 elif event_id == "Mushroom":
                     if self.snes_connected:
                         await self.snes.PutAddress([(int('0xF50019', 16), [int('0x01', 16)])])
-                    print(self.ps.client.nick + ': 🍄')
+                    print(self.client.nick + ': 🍄')
                     await channel.send('🍄')
                 elif event_id == "Cape":
                     if self.snes_connected:
                         await self.snes.PutAddress([(int('0xF50019', 16), [int('0x02', 16)])])
-                    print(self.ps.client.nick + ': 🪶')
+                    print(self.client.nick + ': 🪶')
                     await channel.send('🪶')
                 elif event_id == "Fire Flower":
                     if self.snes_connected:
                         await self.snes.PutAddress([(int('0xF50019', 16), [int('0x03', 16)])])
-                    print(self.ps.client.nick + ': 🌹')
+                    print(self.client.nick + ': 🌹')
                     await channel.send('🌹')
 
                 '''
@@ -208,8 +201,8 @@ class Bot(commands.Bot):
         if config['options']['snes_enabled'] == 'True':
             await self.snes_connect()
         if config['options']['pubsub_enabled'] == 'True':
-            await self.ps.client.pubsub.subscribe_topics(self.ps.topics)
-            await self.ps.client.start()
+            await self.client.pubsub.subscribe_topics(self.topics)
+            await self.client.start()
 
     async def event_message(self, message):
         if message.echo:
