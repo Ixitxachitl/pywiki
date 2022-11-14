@@ -63,6 +63,76 @@ class Bot(commands.Bot):
         # engines = openai.Engine.list()
         # print(engines.data)
 
+        self.keysig = {
+            'c': {
+                'major': 'none',
+                'minor': 'B♭, E♭, A♭'
+            },
+            'c sharp': {
+                'major': 'F♯, C♯, G♯, D♯, A♯, E♯, B♯',
+                'minor': 'F♯, C♯, G♯, D♯'
+            },
+            'd flat': {
+                'major': 'B♭, E♭, A♭, D♭, G♭',
+                'minor': 'F♯, C♯, G♯, D♯'
+            },
+            'd': {
+                'major': 'F♯, C♯',
+                'minor': 'B♭'
+            },
+            'd sharp': {
+                'minor': 'F♯, C♯, G♯, D♯, A♯, E♯'
+            },
+            'e flat': {
+                'major': 'B♭, E♭, A♭',
+                'minor': 'B♭, E♭, A♭, D♭, G♭, C♭'
+            },
+            'e': {
+                'major': 'F♯, C♯, G♯, D♯',
+                'minor': 'F♯'
+            },
+            'f': {
+                'major': 'B♭',
+                'minor': 'B♭, E♭, A♭, D♭'
+            },
+            'f sharp': {
+                'major': 'F♯, C♯, G♯, D♯, A♯, E♯',
+                'minor': 'B♭, E♭, A♭, D♭'
+            },
+            'g flat': {
+                'major': 'B♭, E♭, A♭, D♭, G♭, C♭',
+            },
+            'g': {
+                'major': 'F♯',
+                'minor': 'B♭, E♭'
+            },
+            'g sharp': {
+                'minor': 'F♯, C♯, G♯, D♯, A♯'
+            },
+            'a flat': {
+                'major': 'B♭, E♭, A♭, D♭',
+                'minor': 'B♭, E♭, A♭, D♭, G♭, C♭, F♭'
+            },
+            'a': {
+                'major': 'F♯, C♯, G♯',
+                'minor': 'none'
+            },
+            'a sharp': {
+                'minor': 'F♯, C♯, G♯, D♯, A♯, E♯, B♯'
+            },
+            'b flat': {
+                'major': 'B♭, E♭',
+                'minor': 'B♭, E♭, A♭, D♭, G♭'
+            },
+            'b': {
+                'major': 'F♯, C♯, G♯, D♯, A♯',
+                'minor': 'F♯, C♯'
+            },
+            'c flat': {
+                'major': 'B♭, E♭, A♭, D♭, G♭, C♭, F♭'
+            }
+        }
+
         self.snes_connected = False
 
         if config['options']['snes_enabled'] == 'True':
@@ -253,6 +323,44 @@ class Bot(commands.Bot):
                 await ctx.send(ctx.author.name + ' is not following')
 
     @commands.command()
+    async def key(self, ctx: commands.Context):
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        if config['options']['key_enabled'] == 'True':
+            try:
+                key_index = ''
+                command = ctx.message.content.split(' ', 1)[1]
+                if len(command) == 2:
+                    if command[1] == '#':
+                        key_index = command[0].lower() + ' sharp'
+                    if command[1] == 'b':
+                        key_index = command[0].lower() + ' flat'
+                elif len(command) == 1:
+                    key_index = command[0].lower()
+                else:
+                    raise Exception('Syntax Error')
+
+                if key_index in self.keysig:
+                    if command[0].isupper():
+                        if 'major' in self.keysig[key_index]:
+                            print(self.nick + ': ' + self.keysig[key_index]['major'])
+                            await ctx.send(self.keysig[key_index]['major'])
+                        else:
+                            raise Exception('Syntax Error')
+                    else:
+                        if 'minor' in self.keysig[key_index]:
+                            print(self.nick + ': ' + self.keysig[key_index]['minor'])
+                            await ctx.send(self.keysig[key_index]['minor'])
+                        else:
+                            raise Exception('Syntax Error')
+                else:
+                    raise Exception('Syntax Error')
+
+            except Exception as e:
+                print(self.nick + ': ' + str(e))
+                await ctx.send(str(e))
+
+    @commands.command()
     async def ai(self, ctx: commands.Context):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
@@ -400,6 +508,8 @@ class Bot(commands.Bot):
             output += '!exchange '
         if config['options']['fact_enabled'] == 'True':
             output += '!fact '
+        if config['options']['key_enabled'] == 'True':
+            output += '!key '
 
         print(self.nick + ': ' + output)
         await ctx.send(output)
