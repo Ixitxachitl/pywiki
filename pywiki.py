@@ -204,6 +204,9 @@ class Bot(commands.Bot):
         if config['options']['pubsub_enabled'] == 'True':
             await self.pubsub.subscribe_topics(self.topics)
 
+    async def event_channel_joined(self, channel):
+        print('Joined ' + channel.name)
+
     async def event_message(self, message):
         if message.echo:
             return
