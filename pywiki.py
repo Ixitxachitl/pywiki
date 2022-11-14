@@ -328,6 +328,8 @@ class Bot(commands.Bot):
         config.read(r'keys.ini')
         if config['options']['key_enabled'] == 'True':
             try:
+                if len(ctx.message.content.split(' ', 1)) != 2:
+                    raise Exception('Syntax Error')
                 key_index = ''
                 command = ctx.message.content.split(' ', 1)[1]
                 if len(command) == 2:
