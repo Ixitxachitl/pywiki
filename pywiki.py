@@ -62,13 +62,15 @@ class Bot(commands.Bot):
         openai.api_key = config['keys']['openai_api_key']
         # engines = openai.Engine.list()
         # print(engines.data)
-        if config['options']['pubsub_enabled'] == 'True':
-            self.ps = PubSub()
+
+        self.snes_connected = False
+
         if config['options']['snes_enabled'] == 'True':
-            self.snes_connected = False
             self.snes = py2snes.snes()
 
         if config['options']['pubsub_enabled'] == 'True':
+            self.ps = PubSub()
+
             @self.ps.client.event()
             async def event_ready():
                 print("Pubsub Ready")
