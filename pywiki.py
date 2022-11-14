@@ -149,10 +149,10 @@ class Bot(commands.Bot):
                 channel = self.get_channel(channel_name[0].user.name)
                 event_id = event.reward.title
 
-                ###---EDIT HERE FOR CUSTOM REDEMPTIONS---###
+                # # #---EDIT HERE FOR CUSTOM REDEMPTIONS---# # #
                 if event_id == 'Eggs':
                     print(self.nick + ': 🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
-                                                '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
+                                      '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
                     await channel.send('🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
                                        '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
                 elif event_id == 'TTS':
@@ -182,7 +182,7 @@ class Bot(commands.Bot):
                     print(self.client.nick + ': ' + user_input)
                     await channel.send(user_input)
                 '''
-                ###---END EDIT ZONE---###
+                # # #---END EDIT ZONE---# # #
 
     async def snes_connect(self):
         await self.snes.connect()
@@ -267,7 +267,8 @@ class Bot(commands.Bot):
                     except wikipedia.DisambiguationError as e:
                         print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
                         p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
-                except:
+                except Exception as e:
+                    print(e)
                     try:
                         p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=3, auto_suggest=True)
                     except wikipedia.DisambiguationError as e:
@@ -374,6 +375,7 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + response.choices[0].text.strip())
                 await ctx.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
             except AttributeError as e:
+                print(e)
                 print(self.nick + ': ' + response)
                 await ctx.send(response)
 
@@ -393,6 +395,7 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + definition)
                 await ctx.send(definition[:500])
             except TypeError as e:
+                print(e)
                 print(self.nick + ': Definition for ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
                 await ctx.send('Definition for ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
 
@@ -625,9 +628,8 @@ class Bot(commands.Bot):
                 print('regexed')
         return joke
 
-    def reddit_get(self, *args):
+    def reddit_get(self):
         random.seed()
-        headers = {'User-agent': 'pywiki'}
 
         headlines = []
 
