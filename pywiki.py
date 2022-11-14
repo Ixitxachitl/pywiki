@@ -150,6 +150,7 @@ class Bot(commands.Bot):
 
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
+
         chatters = json.loads(config.get('variables', 'chatters'))
         if message.author.name not in chatters:
             chatters.append(message.author.name)
@@ -158,24 +159,11 @@ class Bot(commands.Bot):
                 config.write(configfile)
             if config['options']['welcome_enabled'] == 'True':
 
-                ###---EDIT HERE FOR CUSTOM WELCOMES---###
-                '''
-                if message.author.name == '':
-                    response = ''
-                    print(self.nick + ': ' + response)
-                    await message.channel.send(response)
-                '''
-
-                if message.author.is_subscriber or message.author.is_mod or message.author.is_vip:
-                    response = self.ai_complete(message.content)
-                    try:
-                        print(self.nick + ': ' + response.choices[0].text.strip())
-                        await message.channel.send(
-                            response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
-                    except AttributeError as e:
+                for key in config['greetings']:
+                    if message.author.name == key:
+                        response = config['greetings'][key]
                         print(self.nick + ': ' + response)
                         await message.channel.send(response)
-                ###---END EDIT ZONE---###
 
         await self.handle_commands(message)
 
