@@ -1,29 +1,31 @@
-import ctypes
-import queue
-import threading
-import py2snes
-import twitchio
-from twitchio.ext import pubsub
-from twitchio.ext import commands
-from twitchio.ext import routines
 import asyncio
-import wikipedia
-import requests
-import json
-import datetime
-from dateutil.relativedelta import relativedelta
 import configparser
+import ctypes
+import datetime
+import json
+import queue
 import random
 import re
+import sys
+import threading
+import urllib.parse
+
 import openai
-from pyowm.owm import OWM
+import py2snes
+import pycountry
+import pyttsx3
+import requests
+import twitchio
+import wikipedia
+from dateutil.relativedelta import relativedelta
 from deep_translator import GoogleTranslator
 from deep_translator import single_detection
 from geopy import geocoders
+from pyowm.owm import OWM
 from pytz import timezone
-import sys
-import pyttsx3
-import pycountry
+from twitchio.ext import commands
+from twitchio.ext import pubsub
+from twitchio.ext import routines
 
 
 class Bot(commands.Bot):
@@ -542,6 +544,16 @@ class Bot(commands.Bot):
             # print(json.dumps(fact, indent=4, sort_keys=True))
             print(self.nick + ': ' + fact['text'])
             await ctx.send(fact['text'])
+
+    @commands.command()
+    async def math(self, ctx: commands.Context):
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        if config['options']['math_enabled'] == 'True':
+            url = 'http://api.mathjs.org/v4/?expr=' + urllib.parse.quote(ctx.message.content.split(' ', 1)[1])
+            output = requests.get(url)
+            print(self.nick + ': ' + output.text)
+            await ctx.send(output.text)
 
     @commands.command()
     async def clear(self, ctx: commands.Context):
