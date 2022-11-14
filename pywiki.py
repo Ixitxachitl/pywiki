@@ -34,7 +34,8 @@ class Bot(commands.Bot):
         config.read(r'keys.ini')
         self.prefix = '!'
         super().__init__(token=config['keys']['token'], prefix=self.prefix,
-                         initial_channels=config['options']['channel'].split(','))
+                         initial_channels=config['options']['channel'].split(','),
+                         client_secret=config['keys']['client_secret'])
         self.client_id = config['keys']['client_id']
         self.client_secret = config['keys']['client_secret']
         self.client_credentials = requests.post('https://id.twitch.tv/oauth2/token?client_id='
@@ -53,7 +54,10 @@ class Bot(commands.Bot):
         self.my_token = config['keys']['token']
         self.users_oauth_token = config['keys']['pubsub_oauth_token']
         self.users_channel = config['options']['pubsub_channel']
-        self.users_channel_id = int(config['options']['pubsub_channel_id'])
+        headers = {'Client-ID': self.client_id,
+                   'Authorization': 'Bearer ' + self.client_credentials['access_token']}
+        url = 'https://api.twitch.tv/helix/users?login=' + self.users_channel
+        self.users_channel_id = int(requests.get(url, headers=headers).json()['data'][0]['id'])
 
         self.keysig = {
             'c': {
