@@ -154,7 +154,7 @@ class Bot(commands.Bot):
                                        '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
                 elif event_id == 'TTS':
                     user_input = event._data['message']['data']['redemption']['user_input']
-                    # print(self.client.nick + ': ' + user_input)
+                    # print(self.nick + ': ' + user_input)
                     # await channel.send(user_input)
                     pyttsx3.speak(user_input)
                 elif event_id == "Mushroom":
