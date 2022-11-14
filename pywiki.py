@@ -507,6 +507,8 @@ class Bot(commands.Bot):
             output += '!fact '
         if config['options']['key_enabled'] == 'True':
             output += '!key '
+        if config['options']['math_enabled'] == 'True':
+            output += '!math '
 
         print(self.nick + ': ' + output)
         await ctx.send(output)
