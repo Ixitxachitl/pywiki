@@ -15,7 +15,6 @@ import py2snes
 import pycountry
 import pyttsx3
 import requests
-import twitchio
 import wikipedia
 from dateutil.relativedelta import relativedelta
 from deep_translator import GoogleTranslator
