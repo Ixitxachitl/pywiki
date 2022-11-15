@@ -1,5 +1,6 @@
 # pywiki
 A twitch chatbot that can answer all your questions.
+Run on windows if you want to use reddit, it uses a ctypes popup.
 
 Requirements:
 -twitchio
@@ -12,6 +13,8 @@ Requirements:
 -pytz
 -pyttsx3
 -pycountry
+-py2snes
+-dateutil
 -maybe more?...
 
 You'll need keys:
