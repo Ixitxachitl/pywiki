@@ -371,6 +371,9 @@ class Bot(commands.Bot):
 
             response = self.ai_complete(ctx.message.content.split(' ', 1)[1])
 
+            while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
+                response.choices[0].text = response.choices[0].text[1:]
+
             try:
                 print(self.nick + ': ' + response.choices[0].text.strip())
                 await ctx.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
@@ -612,7 +615,8 @@ class Bot(commands.Bot):
             title = post['data']['title']
             output = post['data']['selftext']
             if (len(output) < 100 and not
-            re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', output)):
+                    re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
+                               output)):
                 if (title.endswith('?') or
                         title.endswith('.') or
                         title.endswith('…') or
