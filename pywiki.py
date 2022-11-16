@@ -352,7 +352,7 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['ai_enabled'] == 'True':
 
-            response = self.ai_complete(ctx.message.content.split(' ', 1)[1])
+            response = self.ai_complete(self, ctx.message.content.split(' ', 1)[1])
 
             while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
                 response.choices[0].text = response.choices[0].text[1:]
@@ -583,7 +583,7 @@ class Bot(commands.Bot):
         q.put(option)
 
     @staticmethod
-    def ai_complete(message):
+    def ai_complete(self, message):
         self.config.read(r'keys.ini')
         completion = openai.Completion.create(temperature=float(self.config['options']['temperature']),
                                               max_tokens=int(self.config['options']['tokens']),
