@@ -33,14 +33,12 @@ class Bot(commands.Bot):
     config.read(r'keys.ini')
 
     def __init__(self):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
         self.prefix = '!'
-        super().__init__(token=config['keys']['token'], prefix=self.prefix,
-                         initial_channels=config['options']['channel'].split(','),
-                         client_secret=config['keys']['client_secret'])
-        self.client_id = config['keys']['client_id']
-        self.client_secret = config['keys']['client_secret']
+        super().__init__(token=self.config['keys']['token'], prefix=self.prefix,
+                         initial_channels=self.config['options']['channel'].split(','),
+                         client_secret=self.config['keys']['client_secret'])
+        self.client_id = self.config['keys']['client_id']
+        self.client_secret = self.config['keys']['client_secret']
         self.client_credentials = requests.post('https://id.twitch.tv/oauth2/token?client_id='
                                                 + self.client_id
                                                 + '&client_secret='
@@ -49,13 +47,13 @@ class Bot(commands.Bot):
                                                 + '&scope='
                                                 + '').json()
         # print(json.dumps(self.client_credentials, indent=4, sort_keys=True))
-        openai.api_key = config['keys']['openai_api_key']
+        openai.api_key = self.config['keys']['openai_api_key']
         # engines = openai.Engine.list()
         # print(engines.data)
 
-        self.my_token = config['keys']['token']
-        self.users_oauth_token = config['keys']['pubsub_oauth_token']
-        self.users_channel = config['options']['pubsub_channel']
+        self.my_token = self.config['keys']['token']
+        self.users_oauth_token = self.config['keys']['pubsub_oauth_token']
+        self.users_channel = self.config['options']['pubsub_channel']
         headers = {'Client-ID': self.client_id,
                    'Authorization': 'Bearer ' + self.client_credentials['access_token']}
         url = 'https://api.twitch.tv/helix/users?login=' + self.users_channel
@@ -133,10 +131,10 @@ class Bot(commands.Bot):
 
         self.snes_connected = False
 
-        if config['options']['snes_enabled'] == 'True':
+        if self.config['options']['snes_enabled'] == 'True':
             self.snes = py2snes.snes()
 
-        if config['options']['pubsub_enabled'] == 'True':
+        if self.config['options']['pubsub_enabled'] == 'True':
             self.pubsub = pubsub.PubSubPool(self)
             self.topics = [pubsub.channel_points(self.users_oauth_token)[self.users_channel_id]]
 
@@ -515,6 +513,8 @@ class Bot(commands.Bot):
             output += '!key '
         if config['options']['math_enabled'] == 'True':
             output += '!math '
+        if config['options']['pokemon_enabled'] == 'True':
+            output += '!pokemon '
 
         print(self.nick + ': ' + output)
         await ctx.send(output)
@@ -566,6 +566,20 @@ class Bot(commands.Bot):
             output = requests.get(url)
             print(self.nick + ': ' + output.text)
             await ctx.send(output.text)
+
+    @commands.cooldown(rate=1, per=float(config['options']['pokemon_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def pokemon(self, ctx: commands.Context):
+        config = configparser.ConfigParser()
+        config.read(r'keys.ini')
+        if config['options']['pokemon_enabled'] == 'True':
+            pokedex = open('pokedex.json', encoding='utf8')
+            data = json.load(pokedex)
+            random_pokemon_id = random.randint(1, len(data))
+            for item in data:
+                if item['id'] == random_pokemon_id:
+                    print(self.nick + ': ' + item['name']['english'])
+                    await ctx.send(item['name']['english'])
 
     @commands.command()
     async def clear(self, ctx: commands.Context):
