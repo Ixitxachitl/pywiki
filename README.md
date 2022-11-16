@@ -25,3 +25,5 @@ You'll need keys:
 -open weather maps api key
 -google cloud platform api key with timezone and geocoding apis enabled
 -detect language api key
+
+Get the pokedex at https://github.com/fanzeyi/pokemon.json/blob/master/pokedex.json
