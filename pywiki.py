@@ -197,15 +197,14 @@ class Bot(commands.Bot):
             self.snes_connected = False
 
     async def event_ready(self):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
+        self.config.read(r'keys.ini')
 
         print(f'Logged in as | {self.nick}')
         print(f'User id is | {self.user_id}')
 
-        if config['options']['snes_enabled'] == 'True':
+        if self.config['options']['snes_enabled'] == 'True':
             await self.snes_connect()
-        if config['options']['pubsub_enabled'] == 'True':
+        if self.config['options']['pubsub_enabled'] == 'True':
             await self.pubsub.subscribe_topics(self.topics)
 
     async def event_channel_joined(self, channel):
@@ -223,20 +222,19 @@ class Bot(commands.Bot):
 
         print(message.author.name + ': ' + message.content)
 
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
+        self.config.read(r'keys.ini')
 
-        chatters = json.loads(config.get('variables', 'chatters'))
+        chatters = json.loads(self.config.get('variables', 'chatters'))
         if message.author.name not in chatters:
             chatters.append(message.author.name)
-            config['variables']['chatters'] = json.dumps(chatters)
+            self.config['variables']['chatters'] = json.dumps(chatters)
             with open('keys.ini', 'w') as configfile:
-                config.write(configfile)
-            if config['options']['welcome_enabled'] == 'True':
+                self.config.write(configfile)
+            if self.config['options']['welcome_enabled'] == 'True':
 
-                for key in config['greetings']:
+                for key in self.config['greetings']:
                     if message.author.name == key:
-                        response = config['greetings'][key]
+                        response = self.config['greetings'][key]
                         print(self.nick + ': ' + response)
                         await message.channel.send(response)
 
@@ -245,9 +243,8 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['wiki_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def wiki(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['wiki_enabled'] == 'True':
+        self.config.read(r'keys.ini')
+        if self.config['options']['wiki_enabled'] == 'True':
             wikipedia.set_lang("en")
             try:
                 try:
@@ -270,9 +267,8 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['followage_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def followage(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['followage_enabled'] == 'True':
+        self.config.read(r'keys.ini')
+        if self.config['options']['followage_enabled'] == 'True':
             headers = {'Client-ID': self.client_id,
                        'Authorization': 'Bearer ' + self.client_credentials['access_token']}
             url_to = 'https://api.twitch.tv/helix/users?login=' + ctx.channel.name
@@ -313,9 +309,8 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['key_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def key(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['key_enabled'] == 'True':
+        self.config.read(r'keys.ini')
+        if self.config['options']['key_enabled'] == 'True':
             try:
                 if len(ctx.message.content.split(' ', 1)) != 2:
                     raise Exception('Syntax Error')
@@ -354,9 +349,8 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['ai_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def ai(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['ai_enabled'] == 'True':
+        self.config.read(r'keys.ini')
+        if self.config['options']['ai_enabled'] == 'True':
 
             response = self.ai_complete(ctx.message.content.split(' ', 1)[1])
 
@@ -374,9 +368,8 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['define_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def define(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['define_enabled'] == 'True':
+        self.config.read(r'keys.ini')
+        if self.config['options']['define_enabled'] == 'True':
             config = configparser.ConfigParser()
             config.read(r'keys.ini')
             url = 'https://www.dictionaryapi.com/api/v3/references/learners/json/' + ctx.message.content.split(' ', 1)[
@@ -395,10 +388,9 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['translate_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def translate(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['translate_enabled'] == 'True':
-            language_short = single_detection(ctx.message.content.split(' ', 1)[1], api_key=config['keys'][
+        self.config.read(r'keys.ini')
+        if self.config['options']['translate_enabled'] == 'True':
+            language_short = single_detection(ctx.message.content.split(' ', 1)[1], api_key=self.config['keys'][
                 'detect_language_api_key'])
             language_long = pycountry.languages.get(alpha_2=language_short)
             translated = GoogleTranslator(source=language_short, target='en').translate(
@@ -410,15 +402,14 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['weather_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def weather(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['weather_enabled'] == 'True':
-            owm = OWM(config['keys']['owm_api_key'])
+        self.config.read(r'keys.ini')
+        if self.config['options']['weather_enabled'] == 'True':
+            owm = OWM(self.config['keys']['owm_api_key'])
             mgr = owm.weather_manager()
             try:
                 # F = 1.8(K - 273) + 32
                 # C = K – 273.15
-                g = geocoders.GoogleV3(api_key=config['keys']['google_api_key'], domain='maps.googleapis.com')
+                g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
                 observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
                 one_call = mgr.one_call(lat=observation.location.lat, lon=observation.location.lon)
                 place_object = g.reverse((observation.location.lat, observation.location.lon))
@@ -469,9 +460,8 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['reddit_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def reddit(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['reddit_enabled'] == 'True':
+        self.config.read(r'keys.ini')
+        if self.config['options']['reddit_enabled'] == 'True':
             joke = self.reddit_get()
             q = queue.Queue()
             x = threading.Thread(target=self.reddit_confirm, args=('Confirm?', joke, q))
@@ -486,34 +476,33 @@ class Bot(commands.Bot):
     @commands.command()
     async def help(self, ctx: commands.Context):
         output = 'Enabled Commands Are: '
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
+        self.config.read(r'keys.ini')
 
-        if config['options']['wiki_enabled'] == 'True':
+        if self.config['options']['wiki_enabled'] == 'True':
             output += '!wiki '
-        if config['options']['followage_enabled'] == 'True':
+        if self.config['options']['followage_enabled'] == 'True':
             output += '!followage '
-        if config['options']['ai_enabled'] == 'True':
+        if self.config['options']['ai_enabled'] == 'True':
             output += '!ai '
-        if config['options']['define_enabled'] == 'True':
+        if self.config['options']['define_enabled'] == 'True':
             output += '!define '
-        if config['options']['translate_enabled'] == 'True':
+        if self.config['options']['translate_enabled'] == 'True':
             output += '!translate '
-        if config['options']['weather_enabled'] == 'True':
+        if self.config['options']['weather_enabled'] == 'True':
             output += '!weather '
-        if config['options']['reddit_enabled'] == 'True':
+        if self.config['options']['reddit_enabled'] == 'True':
             output += '!reddit '
-        if config['options']['time_enabled'] == 'True':
+        if self.config['options']['time_enabled'] == 'True':
             output += '!time '
-        if config['options']['exchange_enabled'] == 'True':
+        if self.config['options']['exchange_enabled'] == 'True':
             output += '!exchange '
-        if config['options']['fact_enabled'] == 'True':
+        if self.config['options']['fact_enabled'] == 'True':
             output += '!fact '
-        if config['options']['key_enabled'] == 'True':
+        if self.config['options']['key_enabled'] == 'True':
             output += '!key '
-        if config['options']['math_enabled'] == 'True':
+        if self.config['options']['math_enabled'] == 'True':
             output += '!math '
-        if config['options']['pokemon_enabled'] == 'True':
+        if self.config['options']['pokemon_enabled'] == 'True':
             output += '!pokemon '
 
         print(self.nick + ': ' + output)
@@ -522,10 +511,9 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['time_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def time(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['time_enabled'] == 'True':
-            g = geocoders.GoogleV3(api_key=config['keys']['google_api_key'], domain='maps.googleapis.com')
+        self.config.read(r'keys.ini')
+        if self.config['options']['time_enabled'] == 'True':
+            g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
             place, (lat, lng) = g.geocode(ctx.message.content.split(' ', 1)[1])
             tz = g.reverse_timezone((lat, lng))
             tz_object = timezone(str(tz))
@@ -536,9 +524,8 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['exchange_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def exchange(self, ctx: commands.Context, cur_from='usd', cur_to='eur', amount='1'):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['exchange_enabled'] == 'True':
+        self.config.read(r'keys.ini')
+        if self.config['options']['exchange_enabled'] == 'True':
             url = 'https://api.exchangerate.host/convert?from=' + cur_from + '&to=' + cur_to + '&amount=' + amount
             data = requests.get(url).json()
             print(self.nick + ': ' + amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
@@ -547,9 +534,8 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['fact_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def fact(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['fact_enabled'] == 'True':
+        self.config.read(r'keys.ini')
+        if self.config['options']['fact_enabled'] == 'True':
             url = 'https://uselessfacts.jsph.pl/random.json?language=en'
             fact = requests.get(url).json()
             # print(json.dumps(fact, indent=4, sort_keys=True))
@@ -559,9 +545,8 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['math_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def math(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['math_enabled'] == 'True':
+        self.config.read(r'keys.ini')
+        if self.config['options']['math_enabled'] == 'True':
             url = 'http://api.mathjs.org/v4/?expr=' + urllib.parse.quote(ctx.message.content.split(' ', 1)[1])
             output = requests.get(url)
             print(self.nick + ': ' + output.text)
@@ -570,9 +555,8 @@ class Bot(commands.Bot):
     @commands.cooldown(rate=1, per=float(config['options']['pokemon_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def pokemon(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        if config['options']['pokemon_enabled'] == 'True':
+        self.config.read(r'keys.ini')
+        if self.config['options']['pokemon_enabled'] == 'True':
             pokedex = open('pokedex.json', encoding='utf8')
             data = json.load(pokedex)
             random_pokemon_id = random.randint(1, len(data))
@@ -583,12 +567,11 @@ class Bot(commands.Bot):
 
     @commands.command()
     async def clear(self, ctx: commands.Context):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
+        self.config.read(r'keys.ini')
         if ctx.author.is_mod or ctx.author.is_broadcaster:
-            config['variables']['chatters'] = '[]'
+            self.config['variables']['chatters'] = '[]'
             with open('keys.ini', 'w') as configfile:
-                config.write(configfile)
+                self.config.write(configfile)
 
     @staticmethod
     def reddit_confirm(title, message, q):
@@ -601,11 +584,10 @@ class Bot(commands.Bot):
 
     @staticmethod
     def ai_complete(message):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        completion = openai.Completion.create(temperature=float(config['options']['temperature']),
-                                              max_tokens=int(config['options']['tokens']),
-                                              engine=config['options']['ai_engine'],
+        self.config.read(r'keys.ini')
+        completion = openai.Completion.create(temperature=float(self.config['options']['temperature']),
+                                              max_tokens=int(self.config['options']['tokens']),
+                                              engine=self.config['options']['ai_engine'],
                                               prompt=message)
         print(json.dumps(completion, indent=4, sort_keys=True))
         moderation = openai.Moderation.create(input=completion.choices[0].text, model='text-moderation-stable')
