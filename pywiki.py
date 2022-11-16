@@ -53,11 +53,6 @@ class Bot(commands.Bot):
 
         self.my_token = self.config['keys']['token']
         self.users_oauth_token = self.config['keys']['pubsub_oauth_token']
-        self.users_channel = self.config['options']['pubsub_channel']
-        headers = {'Client-ID': self.client_id,
-                   'Authorization': 'Bearer ' + self.client_credentials['access_token']}
-        url = 'https://api.twitch.tv/helix/users?login=' + self.users_channel
-        self.users_channel_id = int(requests.get(url, headers=headers).json()['data'][0]['id'])
 
         self.keysig = {
             'c': {
@@ -135,6 +130,11 @@ class Bot(commands.Bot):
             self.snes = py2snes.snes()
 
         if self.config['options']['pubsub_enabled'] == 'True':
+            self.users_channel = self.config['options']['pubsub_channel']
+            headers = {'Client-ID': self.client_id,
+                       'Authorization': 'Bearer ' + self.client_credentials['access_token']}
+            url = 'https://api.twitch.tv/helix/users?login=' + self.users_channel
+            self.users_channel_id = int(requests.get(url, headers=headers).json()['data'][0]['id'])
             self.pubsub = pubsub.PubSubPool(self)
             self.topics = [pubsub.channel_points(self.users_oauth_token)[self.users_channel_id]]
 
@@ -658,4 +658,3 @@ async def bot_close():
 atexit.register(cleanup)
 bot = Bot()
 bot.run()
-
