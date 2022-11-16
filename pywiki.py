@@ -1,4 +1,5 @@
 import asyncio
+import atexit
 import configparser
 import ctypes
 import datetime
@@ -24,10 +25,12 @@ from pyowm.owm import OWM
 from pytz import timezone
 from twitchio.ext import commands
 from twitchio.ext import pubsub
-from twitchio.ext import routines
 
 
 class Bot(commands.Bot):
+
+    config = configparser.ConfigParser()
+    config.read(r'keys.ini')
 
     def __init__(self):
         config = configparser.ConfigParser()
@@ -46,7 +49,6 @@ class Bot(commands.Bot):
                                                 + '&scope='
                                                 + '').json()
         # print(json.dumps(self.client_credentials, indent=4, sort_keys=True))
-        self.wiki_cooldown = False
         openai.api_key = config['keys']['openai_api_key']
         # engines = openai.Engine.list()
         # print(engines.data)
@@ -242,45 +244,32 @@ class Bot(commands.Bot):
 
         await self.handle_commands(message)
 
-    @routines.routine(iterations=1)
-    async def wiki_cooldown_routine(self):
-        config = configparser.ConfigParser()
-        config.read(r'keys.ini')
-        countdown = int(config['options']['wiki_cooldown'])
-        while countdown != 0:
-            await asyncio.sleep(1)
-            print(countdown, end=" ")
-            countdown -= 1
-        self.wiki_cooldown = False
-
+    @commands.cooldown(rate=1, per=float(config['options']['wiki_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def wiki(self, ctx: commands.Context):
         config = configparser.ConfigParser()
         config.read(r'keys.ini')
         if config['options']['wiki_enabled'] == 'True':
-            if not self.wiki_cooldown:
-                wikipedia.set_lang("en")
-
+            wikipedia.set_lang("en")
+            try:
                 try:
-                    try:
-                        p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=3, auto_suggest=False)
-                    except wikipedia.DisambiguationError as e:
-                        print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
-                        p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
-                except Exception as e:
-                    print(e)
-                    try:
-                        p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=3, auto_suggest=True)
-                    except wikipedia.DisambiguationError as e:
-                        print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
-                        p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
-                    except wikipedia.PageError as e:
-                        p = str(e)
-                print(self.nick + ": " + p)
-                await ctx.send(p.replace('\r', '').replace('\n', '')[:500])
-                self.wiki_cooldown = True
-                self.wiki_cooldown_routine.start()
+                    p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=3, auto_suggest=False)
+                except wikipedia.DisambiguationError as e:
+                    print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
+                    p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
+            except Exception as e:
+                print(e)
+                try:
+                    p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=3, auto_suggest=True)
+                except wikipedia.DisambiguationError as e:
+                    print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
+                    p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
+                except wikipedia.PageError as e:
+                    p = str(e)
+            print(self.nick + ": " + p)
+            await ctx.send(p.replace('\r', '').replace('\n', '')[:500])
 
+    @commands.cooldown(rate=1, per=float(config['options']['followage_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def followage(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -323,6 +312,7 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + ctx.author.name + ' is not following')
                 await ctx.send(ctx.author.name + ' is not following')
 
+    @commands.cooldown(rate=1, per=float(config['options']['key_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def key(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -363,6 +353,7 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + str(e))
                 await ctx.send(str(e))
 
+    @commands.cooldown(rate=1, per=float(config['options']['ai_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def ai(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -382,6 +373,7 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + response)
                 await ctx.send(response)
 
+    @commands.cooldown(rate=1, per=float(config['options']['define_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def define(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -402,6 +394,7 @@ class Bot(commands.Bot):
                 print(self.nick + ': Definition for ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
                 await ctx.send('Definition for ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
 
+    @commands.cooldown(rate=1, per=float(config['options']['translate_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def translate(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -416,6 +409,7 @@ class Bot(commands.Bot):
             print(self.nick + ': ' + response)
             await ctx.send(response[:500])
 
+    @commands.cooldown(rate=1, per=float(config['options']['weather_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def weather(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -474,6 +468,7 @@ class Bot(commands.Bot):
                 print(self.nick + ': Location ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
                 await ctx.send('Location ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
 
+    @commands.cooldown(rate=1, per=float(config['options']['reddit_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def reddit(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -524,6 +519,7 @@ class Bot(commands.Bot):
         print(self.nick + ': ' + output)
         await ctx.send(output)
 
+    @commands.cooldown(rate=1, per=float(config['options']['time_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def time(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -537,6 +533,7 @@ class Bot(commands.Bot):
             print(self.nick + ': The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
             await ctx.send('The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
 
+    @commands.cooldown(rate=1, per=float(config['options']['exchange_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def exchange(self, ctx: commands.Context, cur_from='usd', cur_to='eur', amount='1'):
         config = configparser.ConfigParser()
@@ -547,6 +544,7 @@ class Bot(commands.Bot):
             print(self.nick + ': ' + amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
             await ctx.send(amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
 
+    @commands.cooldown(rate=1, per=float(config['options']['fact_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def fact(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -558,6 +556,7 @@ class Bot(commands.Bot):
             print(self.nick + ': ' + fact['text'])
             await ctx.send(fact['text'])
 
+    @commands.cooldown(rate=1, per=float(config['options']['math_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def math(self, ctx: commands.Context):
         config = configparser.ConfigParser()
@@ -615,8 +614,8 @@ class Bot(commands.Bot):
             title = post['data']['title']
             output = post['data']['selftext']
             if (len(output) < 100 and not
-                    re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
-                               output)):
+            re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
+                       output)):
                 if (title.endswith('?') or
                         title.endswith('.') or
                         title.endswith('…') or
@@ -650,13 +649,17 @@ class Bot(commands.Bot):
         return headlines[0]
 
 
-def main():
-    try:
-        bot = Bot()
-        bot.run()
-    finally:
-        sys.exit()
+def cleanup():
+    print('Exiting')
+    asyncio.run(bot_close())
+    sys.exit()
 
 
-if __name__ == '__main__':
-    main()
+async def bot_close():
+    await bot.close()
+
+
+atexit.register(cleanup)
+bot = Bot()
+bot.run()
+
