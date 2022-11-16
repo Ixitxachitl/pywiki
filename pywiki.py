@@ -181,6 +181,19 @@ class Bot(commands.Bot):
                     # print(json.dumps(fact, indent=4, sort_keys=True))
                     print(self.nick + ': ' + fact['text'])
                     await channel.send(fact['text'])
+                elif event_id == 'AI':
+                    response = self.ai_complete(self, event.input)
+
+                    while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
+                        response.choices[0].text = response.choices[0].text[1:]
+
+                    try:
+                        print(self.nick + ': ' + response.choices[0].text.strip())
+                        await channel.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
+                    except AttributeError as e:
+                        print(e)
+                        print(self.nick + ': ' + response)
+                        await channel.send(response)
 
                 '''
                 elif event_id == 'Echo':
