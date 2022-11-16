@@ -175,6 +175,12 @@ class Bot(commands.Bot):
                         await self.snes.PutAddress([(int('0xF50019', 16), [int('0x03', 16)])])
                     print(self.nick + ': 🌹')
                     await channel.send('🌹')
+                elif event_id == 'Random Fact':
+                    fact_url = 'https://uselessfacts.jsph.pl/random.json?language=en'
+                    fact = requests.get(fact_url).json()
+                    # print(json.dumps(fact, indent=4, sort_keys=True))
+                    print(self.nick + ': ' + fact['text'])
+                    await channel.send(fact['text'])
 
                 '''
                 elif event_id == 'Echo':
