@@ -17,6 +17,7 @@ import pycountry
 import pyttsx3
 import requests
 import wikipedia
+from bs4 import BeautifulSoup
 from dateutil.relativedelta import relativedelta
 from deep_translator import GoogleTranslator
 from deep_translator import single_detection
@@ -412,8 +413,19 @@ class Bot(commands.Bot):
             language_short = single_detection(ctx.message.content.split(' ', 1)[1], api_key=self.config['keys'][
                 'detect_language_api_key'])
             language_long = pycountry.languages.get(alpha_2=language_short)
-            translated = GoogleTranslator(source=language_short, target='en').translate(
-                ctx.message.content.split(' ', 1)[1])
+            try:
+                translated = GoogleTranslator(source=language_short, target='en').translate(
+                                                ctx.message.content.split(' ', 1)[1])
+            except Exception as e:
+                print(e)
+                try:
+                    translated = GoogleTranslator(source=language_long.name, target='en').translate(
+                                                    ctx.message.content.split(' ', 1)[1])
+                except Exception as e:
+                    print(e)
+                    translated = GoogleTranslator(source='auto', target='en').translate(
+                        ctx.message.content.split(' ', 1)[1])
+
             response = 'From ' + language_long.name + ': ' + translated
             print(self.nick + ': ' + response)
             await ctx.send(response[:500])
@@ -578,11 +590,23 @@ class Bot(commands.Bot):
         if self.config['options']['pokemon_enabled'] == 'True':
             pokedex = open('pokedex.json', encoding='utf8')
             data = json.load(pokedex)
-            random_pokemon_id = random.randint(1, len(data))
-            for item in data:
-                if item['id'] == random_pokemon_id:
-                    print(self.nick + ': ' + item['name']['english'])
-                    await ctx.send(item['name']['english'])
+            if len(ctx.message.content.split(' ', 1)) == 1:
+                pokemon_id = random.randint(1, len(data))
+                for item in data:
+                    if item['id'] == pokemon_id:
+                        pokemon = item['name']['english']
+
+            else:
+                pokemon = ctx.message.content.split(' ', 1)[1]
+
+            url = 'https://bulbapedia.bulbagarden.net/w/api.php?&format=json&action=parse&page=' \
+                  + pokemon + '_(Pokémon)'
+            parse = requests.get(url).json()['parse']['text']['*']
+            soup = BeautifulSoup(parse, 'html.parser')
+            description = soup.find_all('p')[0].get_text()
+            print(self.nick + ': ' + description)
+            await ctx.send(description)
+
 
     @commands.command()
     async def clear(self, ctx: commands.Context):
