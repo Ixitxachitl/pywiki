@@ -610,12 +610,12 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['pokemon_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def pokemon(self, ctx: commands.Context, *, args):
+    async def pokemon(self, ctx: commands.Context, *, args=None):
         self.config.read(r'keys.ini')
         if self.config['options']['pokemon_enabled'] == 'True':
             with open('pokedex.json', encoding='utf8') as pokedex:
                 data = json.load(pokedex)
-            if len(ctx.message.content.split(' ', 1)) == 1:
+            if args is None:
                 pokemon_id = random.randint(1, len(data))
                 for item in data:
                     if item['id'] == pokemon_id:
