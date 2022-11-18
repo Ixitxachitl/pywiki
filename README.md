@@ -15,6 +15,8 @@ Requirements:
 -pycountry
 -py2snes
 -dateutil
+-Cinemagoer
+-BeautifulSoup
 -maybe more?...
 
 You'll need keys:
