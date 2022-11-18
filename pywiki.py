@@ -10,6 +10,7 @@ import re
 import sys
 import threading
 import urllib.parse
+from pprint import pprint
 
 import openai
 import py2snes
@@ -30,7 +31,6 @@ from twitchio.ext import pubsub
 
 
 class Bot(commands.Bot):
-
     config = configparser.ConfigParser()
     config.read(r'keys.ini')
 
@@ -38,7 +38,8 @@ class Bot(commands.Bot):
         self.prefix = '!'
         super().__init__(token=self.config['keys']['token'], prefix=self.prefix,
                          initial_channels=self.config['options']['channel'].split(','),
-                         client_secret=self.config['keys']['client_secret'])
+                         client_secret=self.config['keys']['client_secret'],
+                         case_insensitive=True)
         self.client_id = self.config['keys']['client_id']
         self.client_secret = self.config['keys']['client_secret']
         self.client_credentials = requests.post('https://id.twitch.tv/oauth2/token?client_id='
@@ -395,7 +396,7 @@ class Bot(commands.Bot):
         if self.config['options']['define_enabled'] == 'True':
             config = configparser.ConfigParser()
             config.read(r'keys.ini')
-            url = 'https://www.dictionaryapi.com/api/v3/references/learners/json/' + args +\
+            url = 'https://www.dictionaryapi.com/api/v3/references/learners/json/' + args + \
                   '?key=' + config['keys']['merriamwebster_api_key']
             r = requests.get(url).json()
             # print(json.dumps(r, indent=4, sort_keys=True))
@@ -537,6 +538,8 @@ class Bot(commands.Bot):
             output += '!pokemon '
         if self.config['options']['imdb_enabled'] == 'True':
             output += '!imdb '
+        if self.config['options']['pinball_enabled'] == 'True':
+            output += '!pinball '
 
         print(self.nick + ': ' + output)
         await ctx.send(output)
@@ -604,7 +607,8 @@ class Bot(commands.Bot):
                 # print(movie_id)
                 movie_info = self.ia.get_movie(movie_id)
                 # print(movie_info.get('plot')[0])
-                return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' + movie_info.get('plot')[0]
+                return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' \
+                    + movie_info.get('plot')[0]
                 print(self.nick + ': ' + return_string)
                 await ctx.send(return_string[:500])
 
@@ -615,6 +619,7 @@ class Bot(commands.Bot):
         if self.config['options']['pokemon_enabled'] == 'True':
             with open('pokedex.json', encoding='utf8') as pokedex:
                 data = json.load(pokedex)
+            pokemon = ''
             if args is None:
                 pokemon_id = random.randint(1, len(data))
                 for item in data:
@@ -631,6 +636,25 @@ class Bot(commands.Bot):
             description = soup.find_all('p')[0].get_text().strip()
             print(self.nick + ': ' + description)
             await ctx.send(description)
+
+    @commands.cooldown(rate=1, per=float(config['options']['pinball_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def pinball(self, ctx: commands.Context, *, args=None):
+        self.config.read(r'keys.ini')
+        if self.config['options']['pinball_enabled'] == 'True':
+            url = 'https://pinballmap.com/api/v1/machines.json'
+            machines = requests.get(url).json()
+            # print(json.dumps(machines,indent=4,sort_keys=True))
+            if args is not None:
+                for machine in machines['machines']:
+                    if machine['name'].lower() == args.lower():
+                        print(self.nick + ': ' + machine['name'] + ': ' + machine['ipdb_link'])
+                        await ctx.send(machine['name'] + ': ' + machine['ipdb_link'])
+                        break
+            else:
+                machine = random.choice(machines['machines'])
+                print(self.nick + ': ' + machine['name'] + ': ' + machine['ipdb_link'])
+                await ctx.send(machine['name'] + ': ' + machine['ipdb_link'])
 
     @commands.command()
     async def clear(self, ctx: commands.Context):
