@@ -602,13 +602,14 @@ class Bot(commands.Bot):
                 except IndexError as e:
                     print(e)
             if movie != '':
-                print(movie)
+                # print(movie)
                 movie_id = movie.movieID
                 # print(movie_id)
                 movie_info = self.ia.get_movie(movie_id)
                 # print(movie_info.get('plot')[0])
-                print(self.nick + ': ' + movie_info.get('plot')[0])
-                await ctx.send(movie_info.get('plot')[0][:500])
+                return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' + movie_info.get('plot')[0]
+                print(self.nick + ': ' + return_string)
+                await ctx.send(return_string[:500])
 
     @commands.cooldown(rate=1, per=float(config['options']['pokemon_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
