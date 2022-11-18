@@ -265,20 +265,20 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['wiki_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def wiki(self, ctx: commands.Context):
+    async def wiki(self, ctx: commands.Context, *, args):
         self.config.read(r'keys.ini')
         if self.config['options']['wiki_enabled'] == 'True':
             wikipedia.set_lang("en")
             try:
                 try:
-                    p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=3, auto_suggest=False)
+                    p = wikipedia.summary(args, sentences=3, auto_suggest=False)
                 except wikipedia.DisambiguationError as e:
                     print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
                     p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
             except Exception as e:
                 print(e)
                 try:
-                    p = wikipedia.summary(ctx.message.content.split(' ', 1)[1], sentences=3, auto_suggest=True)
+                    p = wikipedia.summary(args, sentences=3, auto_suggest=True)
                 except wikipedia.DisambiguationError as e:
                     print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
                     p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
@@ -331,14 +331,14 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['key_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def key(self, ctx: commands.Context):
+    async def key(self, ctx: commands.Context, args):
         self.config.read(r'keys.ini')
         if self.config['options']['key_enabled'] == 'True':
             try:
                 if len(ctx.message.content.split(' ', 1)) != 2:
                     raise Exception('Syntax Error')
                 key_index = ''
-                command = ctx.message.content.split(' ', 1)[1]
+                command = args
                 if len(command) == 2:
                     if command[1] == '#':
                         key_index = command[0].lower() + ' sharp'
@@ -371,11 +371,11 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['ai_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def ai(self, ctx: commands.Context):
+    async def ai(self, ctx: commands.Context, *, args):
         self.config.read(r'keys.ini')
         if self.config['options']['ai_enabled'] == 'True':
 
-            response = self.ai_complete(self, ctx.message.content.split(' ', 1)[1])
+            response = self.ai_complete(self, args)
 
             while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
                 response.choices[0].text = response.choices[0].text[1:]
@@ -390,13 +390,13 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['define_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def define(self, ctx: commands.Context):
+    async def define(self, ctx: commands.Context, *, args):
         self.config.read(r'keys.ini')
         if self.config['options']['define_enabled'] == 'True':
             config = configparser.ConfigParser()
             config.read(r'keys.ini')
-            url = 'https://www.dictionaryapi.com/api/v3/references/learners/json/' + ctx.message.content.split(' ', 1)[
-                1] + '?key=' + config['keys']['merriamwebster_api_key']
+            url = 'https://www.dictionaryapi.com/api/v3/references/learners/json/' + args +\
+                  '?key=' + config['keys']['merriamwebster_api_key']
             r = requests.get(url).json()
             # print(json.dumps(r, indent=4, sort_keys=True))
             try:
@@ -405,29 +405,26 @@ class Bot(commands.Bot):
                 await ctx.send(definition[:500])
             except TypeError as e:
                 print(e)
-                print(self.nick + ': Definition for ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
-                await ctx.send('Definition for ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
+                print(self.nick + ': Definition for ' + args + ' not found.')
+                await ctx.send('Definition for ' + args + ' not found.')
 
     @commands.cooldown(rate=1, per=float(config['options']['translate_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def translate(self, ctx: commands.Context):
+    async def translate(self, ctx: commands.Context, *, args):
         self.config.read(r'keys.ini')
         if self.config['options']['translate_enabled'] == 'True':
-            language_short = single_detection(ctx.message.content.split(' ', 1)[1], api_key=self.config['keys'][
+            language_short = single_detection(args, api_key=self.config['keys'][
                 'detect_language_api_key'])
             language_long = pycountry.languages.get(alpha_2=language_short)
             try:
-                translated = GoogleTranslator(source=language_short, target='en').translate(
-                                                ctx.message.content.split(' ', 1)[1])
+                translated = GoogleTranslator(source=language_short, target='en').translate(args)
             except Exception as e:
                 print(e)
                 try:
-                    translated = GoogleTranslator(source=language_long.name, target='en').translate(
-                                                    ctx.message.content.split(' ', 1)[1])
+                    translated = GoogleTranslator(source=language_long.name, target='en').translate(args)
                 except Exception as e:
                     print(e)
-                    translated = GoogleTranslator(source='auto', target='en').translate(
-                        ctx.message.content.split(' ', 1)[1])
+                    translated = GoogleTranslator(source='auto', target='en').translate(args)
 
             response = 'From ' + language_long.name + ': ' + translated
             print(self.nick + ': ' + response)
@@ -435,7 +432,7 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['weather_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def weather(self, ctx: commands.Context):
+    async def weather(self, ctx: commands.Context, *, args):
         self.config.read(r'keys.ini')
         if self.config['options']['weather_enabled'] == 'True':
             owm = OWM(self.config['keys']['owm_api_key'])
@@ -444,7 +441,7 @@ class Bot(commands.Bot):
                 # F = 1.8(K - 273) + 32
                 # C = K – 273.15
                 g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
-                observation = mgr.weather_at_place(ctx.message.content.split(' ', 1)[1])
+                observation = mgr.weather_at_place(args)
                 one_call = mgr.one_call(lat=observation.location.lat, lon=observation.location.lon)
                 place_object = g.reverse((observation.location.lat, observation.location.lon))
                 # print(json.dumps(place_object.raw, indent=4, sort_keys=True))
@@ -488,8 +485,8 @@ class Bot(commands.Bot):
                                one_call.forecast_daily[1].detailed_status)
             except Exception as e:
                 print(e)
-                print(self.nick + ': Location ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
-                await ctx.send('Location ' + ctx.message.content.split(' ', 1)[1] + ' not found.')
+                print(self.nick + ': Location ' + args + ' not found.')
+                await ctx.send('Location ' + args + ' not found.')
 
     @commands.cooldown(rate=1, per=float(config['options']['reddit_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -546,11 +543,11 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['time_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def time(self, ctx: commands.Context):
+    async def time(self, ctx: commands.Context, *, args):
         self.config.read(r'keys.ini')
         if self.config['options']['time_enabled'] == 'True':
             g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
-            place, (lat, lng) = g.geocode(ctx.message.content.split(' ', 1)[1])
+            place, (lat, lng) = g.geocode(args)
             tz = g.reverse_timezone((lat, lng))
             tz_object = timezone(str(tz))
             newtime = datetime.datetime.now(tz_object)
@@ -580,23 +577,23 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['math_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def math(self, ctx: commands.Context):
+    async def math(self, ctx: commands.Context, *, args):
         self.config.read(r'keys.ini')
         if self.config['options']['math_enabled'] == 'True':
-            url = 'http://api.mathjs.org/v4/?expr=' + urllib.parse.quote(ctx.message.content.split(' ', 1)[1])
+            url = 'http://api.mathjs.org/v4/?expr=' + urllib.parse.quote(args)
             output = requests.get(url)
             print(self.nick + ': ' + output.text)
             await ctx.send(output.text)
 
     @commands.cooldown(rate=1, per=float(config['options']['imdb_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def imdb(self, ctx: commands.Context):
+    async def imdb(self, ctx: commands.Context, *, args):
         self.config.read(r'keys.ini')
         if self.config['options']['imdb_enabled'] == 'True':
             movie = ''
             for x in range(0, 10):
                 try:
-                    movies = self.ia.search_movie(ctx.message.content.split(' ', 1)[1])
+                    movies = self.ia.search_movie(args)
                     movie = movies[0]
                     break
                 except IndexError as e:
@@ -613,7 +610,7 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['pokemon_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def pokemon(self, ctx: commands.Context):
+    async def pokemon(self, ctx: commands.Context, *, args):
         self.config.read(r'keys.ini')
         if self.config['options']['pokemon_enabled'] == 'True':
             with open('pokedex.json', encoding='utf8') as pokedex:
@@ -625,7 +622,7 @@ class Bot(commands.Bot):
                         pokemon = item['name']['english']
 
             else:
-                pokemon = ctx.message.content.split(' ', 1)[1]
+                pokemon = args
 
             url = 'https://bulbapedia.bulbagarden.net/w/api.php?&format=json&action=parse&page=' \
                   + pokemon + '_(Pokémon)'
