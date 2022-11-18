@@ -22,6 +22,7 @@ from dateutil.relativedelta import relativedelta
 from deep_translator import GoogleTranslator
 from deep_translator import single_detection
 from geopy import geocoders
+from imdb import Cinemagoer
 from pyowm.owm import OWM
 from pytz import timezone
 from twitchio.ext import commands
@@ -51,6 +52,8 @@ class Bot(commands.Bot):
         openai.api_key = self.config['keys']['openai_api_key']
         # engines = openai.Engine.list()
         # print(engines.data)
+
+        self.ia = Cinemagoer()
 
         self.my_token = self.config['keys']['token']
         self.users_oauth_token = self.config['keys']['pubsub_oauth_token']
@@ -535,6 +538,8 @@ class Bot(commands.Bot):
             output += '!math '
         if self.config['options']['pokemon_enabled'] == 'True':
             output += '!pokemon '
+        if self.config['options']['imdb_enabled'] == 'True':
+            output += '!imdb '
 
         print(self.nick + ': ' + output)
         await ctx.send(output)
@@ -583,13 +588,35 @@ class Bot(commands.Bot):
             print(self.nick + ': ' + output.text)
             await ctx.send(output.text)
 
+    @commands.cooldown(rate=1, per=float(config['options']['imdb_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def imdb(self, ctx: commands.Context):
+        self.config.read(r'keys.ini')
+        if self.config['options']['imdb_enabled'] == 'True':
+            movie = ''
+            for x in range(0, 10):
+                try:
+                    movies = self.ia.search_movie(ctx.message.content.split(' ', 1)[1])
+                    movie = movies[0]
+                    break
+                except IndexError as e:
+                    print(e)
+            if movie != '':
+                print(movie)
+                movie_id = movie.movieID
+                # print(movie_id)
+                movie_info = self.ia.get_movie(movie_id)
+                # print(movie_info.get('plot')[0])
+                print(self.nick + ': ' + movie_info.get('plot')[0])
+                await ctx.send(movie_info.get('plot')[0][:500])
+
     @commands.cooldown(rate=1, per=float(config['options']['pokemon_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def pokemon(self, ctx: commands.Context):
         self.config.read(r'keys.ini')
         if self.config['options']['pokemon_enabled'] == 'True':
-            pokedex = open('pokedex.json', encoding='utf8')
-            data = json.load(pokedex)
+            with open('pokedex.json', encoding='utf8') as pokedex:
+                data = json.load(pokedex)
             if len(ctx.message.content.split(' ', 1)) == 1:
                 pokemon_id = random.randint(1, len(data))
                 for item in data:
@@ -603,10 +630,9 @@ class Bot(commands.Bot):
                   + pokemon + '_(Pokémon)'
             parse = requests.get(url).json()['parse']['text']['*']
             soup = BeautifulSoup(parse, 'html.parser')
-            description = soup.find_all('p')[0].get_text()
+            description = soup.find_all('p')[0].get_text().strip()
             print(self.nick + ': ' + description)
             await ctx.send(description)
-
 
     @commands.command()
     async def clear(self, ctx: commands.Context):
