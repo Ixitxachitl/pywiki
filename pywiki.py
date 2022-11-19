@@ -639,13 +639,17 @@ class Bot(commands.Bot):
                 if p.get_text().strip().lower().startswith(pokemon.lower()):
                     description = p.get_text().strip()
                     break
-            url = 'https://pokeapi.co/api/v2/pokemon-species/' + pokemon.lower()
-            headers = {
-                'User-Agent': 'pyWiki'
-            }
-            entry = requests.get(url, headers=headers).json()
-            flavor_text = entry['flavor_text_entries'][0]['flavor_text']
-            output = description + ' - ' + flavor_text
+            flavor_text = ''
+            try:
+                url = 'https://pokeapi.co/api/v2/pokemon-species/' + pokemon.lower()
+                headers = {
+                    'User-Agent': 'pyWiki'
+                }
+                entry = requests.get(url, headers=headers).json()
+                flavor_text = entry['flavor_text_entries'][0]['flavor_text']
+            except requests.exceptions.JSONDecodeError as e:
+                print(e)
+            output = description + ' ' + flavor_text
             print(self.nick + ': ' + output.replace('\r', ' ').replace('\n', ' '))
             await ctx.send(output.replace('\r', ' ').replace('\n', ' ')[:500])
             
