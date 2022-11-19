@@ -634,10 +634,13 @@ class Bot(commands.Bot):
                   + pokemon + '_(Pokémon)'
             parse = requests.get(url).json()['parse']['text']['*']
             soup = BeautifulSoup(parse, 'html.parser')
-            description = soup.find_all('p')[0].get_text().strip()
+            for d in soup.find_all('p'):
+                if d.get_text().strip().lower().startswith(pokemon.lower()):
+                    description = d.get_text().strip()
+                    break
             print(self.nick + ': ' + description)
             await ctx.send(description)
-
+            
     @commands.cooldown(rate=1, per=float(config['options']['pinball_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def pinball(self, ctx: commands.Context, *, args=None):
