@@ -59,6 +59,9 @@ class Bot(commands.Bot):
         self.my_token = self.config['keys']['token']
         self.users_oauth_token = self.config['keys']['pubsub_oauth_token']
 
+        self.oxford_app_id = self.config['keys']['oxford_application_id']
+        self.oxford_api_key = self.config['keys']['oxford_api_key']
+
         self.keysig = {
             'c': {
                 'major': 'none',
@@ -394,20 +397,18 @@ class Bot(commands.Bot):
     async def define(self, ctx: commands.Context, *, args):
         self.config.read(r'keys.ini')
         if self.config['options']['define_enabled'] == 'True':
-            config = configparser.ConfigParser()
-            config.read(r'keys.ini')
-            url = 'https://www.dictionaryapi.com/api/v3/references/learners/json/' + args + \
-                  '?key=' + config['keys']['merriamwebster_api_key']
-            r = requests.get(url).json()
-            # print(json.dumps(r, indent=4, sort_keys=True))
-            try:
-                definition = str(r[0]['shortdef'][0])
-                print(self.nick + ': ' + definition)
-                await ctx.send(definition[:500])
-            except TypeError as e:
-                print(e)
-                print(self.nick + ': Definition for ' + args + ' not found.')
-                await ctx.send('Definition for ' + args + ' not found.')
+            language = 'en-us'
+            word = args
+            url = "https://od-api.oxforddictionaries.com:443/api/v2/entries/" + language + "/" + word.lower()
+            headers = {"app_id": self.oxford_app_id, "app_key": self.oxford_api_key}
+            r = requests.get(url, headers=headers).json()
+            definition = r['results'][0]['lexicalEntries'][0]['entries'][0]['senses'][0]['definitions'][0].capitalize()
+            word = r['results'][0]['word'].capitalize()
+            category = r['results'][0]['lexicalEntries'][0]['lexicalCategory']['text']
+            pronunciation = r['results'][0]['lexicalEntries'][0]['entries'][0]['pronunciations'][0]['phoneticSpelling']
+            out = word + ' - ' + category + ' - ' + pronunciation + ': ' + definition
+            print(self.nick + ': ' + out)
+            await ctx.send(out)
 
     @commands.cooldown(rate=1, per=float(config['options']['translate_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
