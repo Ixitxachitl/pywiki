@@ -634,12 +634,20 @@ class Bot(commands.Bot):
                   + pokemon + '_(Pokémon)'
             parse = requests.get(url).json()['parse']['text']['*']
             soup = BeautifulSoup(parse, 'html.parser')
-            for d in soup.find_all('p'):
-                if d.get_text().strip().lower().startswith(pokemon.lower()):
-                    description = d.get_text().strip()
+            description = ''
+            for p in soup.find_all('p'):
+                if p.get_text().strip().lower().startswith(pokemon.lower()):
+                    description = p.get_text().strip()
                     break
-            print(self.nick + ': ' + description)
-            await ctx.send(description)
+            url = 'https://pokeapi.co/api/v2/pokemon-species/' + pokemon.lower()
+            headers = {
+                'User-Agent': 'pyWiki'
+            }
+            entry = requests.get(url, headers=headers).json()
+            flavor_text = entry['flavor_text_entries'][0]['flavor_text']
+            output = description + ' - ' + flavor_text
+            print(self.nick + ': ' + output.replace('\r', ' ').replace('\n', ' '))
+            await ctx.send(output.replace('\r', ' ').replace('\n', ' ')[:500])
             
     @commands.cooldown(rate=1, per=float(config['options']['pinball_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
