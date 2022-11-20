@@ -410,6 +410,24 @@ class Bot(commands.Bot):
             print(self.nick + ': ' + out)
             await ctx.send(out)
 
+    @commands.cooldown(rate=1, per=float(config['options']['etymology_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def etymology(self, ctx: commands.Context, *, args):
+        self.config.read(r'keys.ini')
+        if self.config['options']['etymology_enabled'] == 'True':
+            language = 'en-us'
+            word = args
+            url = "https://od-api.oxforddictionaries.com:443/api/v2/entries/" + language + "/" + word.lower()
+            headers = {"app_id": self.oxford_app_id, "app_key": self.oxford_api_key}
+            r = requests.get(url, headers=headers).json()
+            pprint(r)
+            etymology = r['results'][0]['lexicalEntries'][0]['entries'][0]['etymologies'][0].capitalize()
+            word = r['results'][0]['word'].capitalize()
+
+            out = word + ': ' + etymology
+            print(self.nick + ': ' + out)
+            await ctx.send(out)
+
     @commands.cooldown(rate=1, per=float(config['options']['translate_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def translate(self, ctx: commands.Context, *, args):
@@ -506,7 +524,7 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + joke)
                 await ctx.send(joke)
 
-    @commands.command()
+    @commands.command(name='commands')
     async def help(self, ctx: commands.Context):
         output = 'Enabled Commands Are: '
         self.config.read(r'keys.ini')
@@ -519,6 +537,8 @@ class Bot(commands.Bot):
             output += '!ai '
         if self.config['options']['define_enabled'] == 'True':
             output += '!define '
+        if self.config['options']['etymology_enabled'] == 'True':
+            output += '!etymology '
         if self.config['options']['translate_enabled'] == 'True':
             output += '!translate '
         if self.config['options']['weather_enabled'] == 'True':
@@ -652,7 +672,7 @@ class Bot(commands.Bot):
             output = description + ' ' + flavor_text
             print(self.nick + ': ' + output.replace('\r', ' ').replace('\n', ' '))
             await ctx.send(output.replace('\r', ' ').replace('\n', ' ')[:500])
-            
+
     @commands.cooldown(rate=1, per=float(config['options']['pinball_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def pinball(self, ctx: commands.Context, *, args=None):
