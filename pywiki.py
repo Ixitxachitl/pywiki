@@ -15,6 +15,7 @@ from pprint import pprint
 import openai
 import py2snes
 import pycountry
+import pyshorteners
 import pyttsx3
 import requests
 import wikipedia
@@ -202,6 +203,16 @@ class Bot(commands.Bot):
                         print(e)
                         print(self.nick + ': ' + response)
                         await channel.send(response)
+                elif event_id == 'Image Generator':
+                    image = openai.Image.create(
+                        prompt=event.input,
+                        n=1,
+                        size="512x512"
+                    )
+                    type_tiny = pyshorteners.Shortener()
+                    image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
+                    print(self.nick + ': ' + image_url)
+                    await channel.send(image_url)
 
                 '''
                 elif event_id == 'Echo':
@@ -420,7 +431,6 @@ class Bot(commands.Bot):
             url = "https://od-api.oxforddictionaries.com:443/api/v2/entries/" + language + "/" + word.lower()
             headers = {"app_id": self.oxford_app_id, "app_key": self.oxford_api_key}
             r = requests.get(url, headers=headers).json()
-            pprint(r)
             etymology = r['results'][0]['lexicalEntries'][0]['entries'][0]['etymologies'][0].capitalize()
             word = r['results'][0]['word'].capitalize()
 
