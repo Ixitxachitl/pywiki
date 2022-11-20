@@ -248,6 +248,11 @@ class Bot(commands.Bot):
     async def event_channel_joined(self, channel):
         print('Joined ' + channel.name)
 
+    async def event_command_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            await ctx.send('This command is on cooldown, you can use it in ' +
+                           str(round(error.retry_after, 2)) + ' seconds')
+
     async def event_message(self, message):
         if message.echo:
             return
@@ -403,6 +408,21 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + response)
                 await ctx.send(response)
 
+    @commands.cooldown(rate=1, per=float(config['options']['imagine_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def imagine(self, ctx: commands.Context, *, args):
+        self.config.read(r'keys.ini')
+        if self.config['options']['imagine_enabled'] == 'True':
+            image = openai.Image.create(
+                prompt=args,
+                n=1,
+                size="512x512"
+            )
+            type_tiny = pyshorteners.Shortener()
+            image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
+            print(self.nick + ': ' + image_url)
+            await ctx.send(image_url)
+
     @commands.cooldown(rate=1, per=float(config['options']['define_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def define(self, ctx: commands.Context, *, args):
@@ -545,6 +565,8 @@ class Bot(commands.Bot):
             output += '!followage '
         if self.config['options']['ai_enabled'] == 'True':
             output += '!ai '
+        if self.config['options']['imagine_enabled'] == 'True':
+            output += '!imagine '
         if self.config['options']['define_enabled'] == 'True':
             output += '!define '
         if self.config['options']['etymology_enabled'] == 'True':
