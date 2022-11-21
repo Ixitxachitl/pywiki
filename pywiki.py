@@ -10,7 +10,7 @@ import re
 import sys
 import threading
 import urllib.parse
-from pprint import pprint
+import pprint
 
 import openai
 import py2snes
@@ -150,83 +150,78 @@ class Bot(commands.Bot):
             self.pubsub = pubsub.PubSubPool(self)
             self.topics = [pubsub.channel_points(self.users_oauth_token)[self.users_channel_id]]
 
-            @self.event()
-            async def event_ready():
-                print("Pubsub Ready")
+    async def event_pubsub_channel_points(self, event: pubsub.PubSubChannelPointsMessage):
+        # print(json.dumps(event._data, indent=4, sort_keys=True))
+        channel_name = await self.fetch_channels([event.channel_id])
+        channel = self.get_channel(channel_name[0].user.name)
+        event_id = event.reward.title
 
-            @self.event()
-            async def event_pubsub_channel_points(event: pubsub.PubSubChannelPointsMessage):
-                # print(json.dumps(event._data, indent=4, sort_keys=True))
-                channel_name = await self.fetch_channels([event.channel_id])
-                channel = self.get_channel(channel_name[0].user.name)
-                event_id = event.reward.title
+        # # #---EDIT HERE FOR CUSTOM REDEMPTIONS---# # #
+        if event_id == 'Eggs':
+            print(self.nick + ': 🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
+                              '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
+            await channel.send('🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
+                               '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
+        elif event_id == 'TTS':
+            user_input = event.input
+            # print(self.nick + ': ' + user_input)
+            # await channel.send(user_input)
+            pyttsx3.speak(user_input)
+        elif event_id == "Mushroom":
+            if self.snes_connected:
+                await self.snes.PutAddress([(int('0xF50019', 16), [int('0x01', 16)])])
+            print(self.nick + ': 🍄')
+            await channel.send('🍄')
+        elif event_id == "Cape":
+            if self.snes_connected:
+                await self.snes.PutAddress([(int('0xF50019', 16), [int('0x02', 16)])])
+            print(self.nick + ': 🪶')
+            await channel.send('🪶')
+        elif event_id == "Fire Flower":
+            if self.snes_connected:
+                await self.snes.PutAddress([(int('0xF50019', 16), [int('0x03', 16)])])
+            print(self.nick + ': 🌹')
+            await channel.send('🌹')
+        elif event_id == 'Random Fact':
+            fact_url = 'https://uselessfacts.jsph.pl/random.json?language=en'
+            fact = requests.get(fact_url).json()
+            # print(json.dumps(fact, indent=4, sort_keys=True))
+            print(self.nick + ': ' + fact['text'])
+            await channel.send(fact['text'])
+        elif event_id == 'AI':
+            response = self.ai_complete(self, event.input)
 
-                # # #---EDIT HERE FOR CUSTOM REDEMPTIONS---# # #
-                if event_id == 'Eggs':
-                    print(self.nick + ': 🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
-                                      '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
-                    await channel.send('🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
-                                       '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
-                elif event_id == 'TTS':
-                    user_input = event.input
-                    # print(self.nick + ': ' + user_input)
-                    # await channel.send(user_input)
-                    pyttsx3.speak(user_input)
-                elif event_id == "Mushroom":
-                    if self.snes_connected:
-                        await self.snes.PutAddress([(int('0xF50019', 16), [int('0x01', 16)])])
-                    print(self.nick + ': 🍄')
-                    await channel.send('🍄')
-                elif event_id == "Cape":
-                    if self.snes_connected:
-                        await self.snes.PutAddress([(int('0xF50019', 16), [int('0x02', 16)])])
-                    print(self.nick + ': 🪶')
-                    await channel.send('🪶')
-                elif event_id == "Fire Flower":
-                    if self.snes_connected:
-                        await self.snes.PutAddress([(int('0xF50019', 16), [int('0x03', 16)])])
-                    print(self.nick + ': 🌹')
-                    await channel.send('🌹')
-                elif event_id == 'Random Fact':
-                    fact_url = 'https://uselessfacts.jsph.pl/random.json?language=en'
-                    fact = requests.get(fact_url).json()
-                    # print(json.dumps(fact, indent=4, sort_keys=True))
-                    print(self.nick + ': ' + fact['text'])
-                    await channel.send(fact['text'])
-                elif event_id == 'AI':
-                    response = self.ai_complete(self, event.input)
+            while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
+                response.choices[0].text = response.choices[0].text[1:]
 
-                    while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
-                        response.choices[0].text = response.choices[0].text[1:]
+            try:
+                print(self.nick + ': ' + response.choices[0].text.strip())
+                await channel.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
+            except AttributeError as e:
+                print(e)
+                print(self.nick + ': ' + response)
+                await channel.send(response)
+        elif event_id == 'Image Generator':
+            try:
+                image = openai.Image.create(
+                    prompt=event.input,
+                    n=1,
+                    size="512x512"
+                )
+                type_tiny = pyshorteners.Shortener()
+                image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
+                print(self.nick + ': ' + image_url)
+                await channel.send(image_url)
+            except openai.error.OpenAIError as e:
+                print(self.nick + ': ' + e.error)
+                await channel.send(e.error)
 
-                    try:
-                        print(self.nick + ': ' + response.choices[0].text.strip())
-                        await channel.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
-                    except AttributeError as e:
-                        print(e)
-                        print(self.nick + ': ' + response)
-                        await channel.send(response)
-                elif event_id == 'Image Generator':
-                    try:
-                        image = openai.Image.create(
-                            prompt=event.input,
-                            n=1,
-                            size="512x512"
-                        )
-                        type_tiny = pyshorteners.Shortener()
-                        image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
-                        print(self.nick + ': ' + image_url)
-                        await channel.send(image_url)
-                    except openai.error.OpenAIError as e:
-                        print(self.nick + ': ' + e.error)
-                        await channel.send(e.error)
-
-                '''
-                elif event_id == 'Echo':
-                    print(self.client.nick + ': ' + event.input)
-                    await channel.send(event.input)
-                '''
-                # # #---END EDIT ZONE---# # #
+        '''
+        elif event_id == 'Echo':
+            print(self.client.nick + ': ' + event.input)
+            await channel.send(event.input)
+        '''
+        # # #---END EDIT ZONE---# # #
 
     async def snes_connect(self):
         await self.snes.connect()
@@ -250,6 +245,7 @@ class Bot(commands.Bot):
             await self.snes_connect()
         if self.config['options']['pubsub_enabled'] == 'True':
             await self.pubsub.subscribe_topics(self.topics)
+            print('Pubsub Ready')
 
     async def event_channel_joined(self, channel):
         print('Joined ' + channel.name)
@@ -725,6 +721,7 @@ class Bot(commands.Bot):
             # print(json.dumps(machines,indent=4,sort_keys=True))
             if args is not None:
                 last_ratio = 0
+                output = ''
                 for machine in machines['machines']:
                     if machine['name'].lower() == args.lower():
                         output = machine['name'] + ': ' + machine['ipdb_link']
