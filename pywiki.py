@@ -10,7 +10,7 @@ import re
 import sys
 import threading
 import urllib.parse
-import pprint
+from pprint import pprint
 
 import openai
 import py2snes
