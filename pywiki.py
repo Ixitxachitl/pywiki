@@ -285,6 +285,36 @@ class Bot(commands.Bot):
 
         await self.handle_commands(message)
 
+    @commands.command()
+    async def settitle(self, ctx: commands.Context, *, args):
+        if ctx.message.author.is_broadcaster or ctx.message.author.is_mod and self.users_channel == ctx.channel.name:
+            user = await bot.fetch_users([ctx.channel.name])
+            url = 'https://api.twitch.tv/helix/channels?broadcaster_id=' + str(user[0].id)
+            headers = {'Authorization': 'Bearer ' + self.users_oauth_token,
+                       'Client-ID': self.client_id,
+                       'Content-Type': 'application/json'}
+            data = {'title': args}
+            response = requests.patch(url=url, headers=headers, data=json.dumps(data))
+            print(response)
+            print(self.nick + ': Set title to: ' + args)
+            await ctx.send('Set title to: ' + args)
+
+    @commands.command()
+    async def setgame(self, ctx: commands.Context, *, args):
+        if ctx.message.author.is_broadcaster or ctx.message.author.is_mod and self.users_channel == ctx.channel.name:
+            user = await bot.fetch_users([ctx.channel.name])
+            game = await bot.fetch_games(names=[args])
+            game_id = game[0].id
+            url = 'https://api.twitch.tv/helix/channels?broadcaster_id=' + str(user[0].id)
+            headers = {'Authorization': 'Bearer ' + self.users_oauth_token,
+                       'Client-ID': self.client_id,
+                       'Content-Type': 'application/json'}
+            data = {'game_id': str(game_id)}
+            response = requests.patch(url=url, headers=headers, data=json.dumps(data))
+            print(response)
+            print(self.nick + ': Set game to: ' + game[0].name)
+            await ctx.send('Set game to: ' + game[0].name)
+
     @commands.cooldown(rate=1, per=float(config['options']['wiki_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def wiki(self, ctx: commands.Context, *, args):
@@ -306,7 +336,7 @@ class Bot(commands.Bot):
                     p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
                 except wikipedia.PageError as e:
                     p = str(e)
-            print(self.nick + ": " + p)
+            print(self.nick + ': ' + p)
             await ctx.send(p.replace('\r', '').replace('\n', '')[:500])
 
     @commands.cooldown(rate=1, per=float(config['options']['uptime_cooldown']), bucket=commands.Bucket.member)
@@ -335,7 +365,6 @@ class Bot(commands.Bot):
                 print(e)
                 print(self.nick + ': ' + channel[0].display_name + ' is not live')
                 await ctx.send(channel[0].display_name + ' is not live')
-
 
     @commands.cooldown(rate=1, per=float(config['options']['followage_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
