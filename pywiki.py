@@ -23,6 +23,7 @@ from bs4 import BeautifulSoup
 from dateutil.relativedelta import relativedelta
 from deep_translator import GoogleTranslator
 from deep_translator import single_detection
+from fuzzywuzzy import fuzz
 from geopy import geocoders
 from imdb import Cinemagoer
 from pyowm.owm import OWM
@@ -140,10 +141,12 @@ class Bot(commands.Bot):
 
         if self.config['options']['pubsub_enabled'] == 'True':
             self.users_channel = self.config['options']['pubsub_channel']
+
             headers = {'Client-ID': self.client_id,
                        'Authorization': 'Bearer ' + self.client_credentials['access_token']}
             url = 'https://api.twitch.tv/helix/users?login=' + self.users_channel
             self.users_channel_id = int(requests.get(url, headers=headers).json()['data'][0]['id'])
+
             self.pubsub = pubsub.PubSubPool(self)
             self.topics = [pubsub.channel_points(self.users_oauth_token)[self.users_channel_id]]
 
@@ -315,17 +318,14 @@ class Bot(commands.Bot):
     async def followage(self, ctx: commands.Context):
         self.config.read(r'keys.ini')
         if self.config['options']['followage_enabled'] == 'True':
-            headers = {'Client-ID': self.client_id,
-                       'Authorization': 'Bearer ' + self.client_credentials['access_token']}
-            url_to = 'https://api.twitch.tv/helix/users?login=' + ctx.channel.name
-            to_id = requests.get(url_to, headers=headers).json()['data'][0]['id']
-            url_from = 'https://api.twitch.tv/helix/users?login=' + ctx.author.name
-            from_id = requests.get(url_from, headers=headers).json()['data'][0]['id']
-            url_follow = 'https://api.twitch.tv/helix/users/follows?to_id=' + to_id + '&from_id=' + from_id
-            r = requests.get(url_follow, headers=headers).json()
-            print(json.dumps(r, indent=4, sort_keys=True))
+
+            from_user = await bot.fetch_users([ctx.message.author.name])
+            to_user = await bot.fetch_users([ctx.message.channel.name])
+
+            follow = await from_user[0].fetch_follow(to_user[0])
+
             try:
-                f = r['data'][0]['followed_at']
+                f = follow.followed_at.strftime('%Y-%m-%dT%H:%M:%SZ')
                 con_followed_at = datetime.datetime.strptime(f, '%Y-%m-%dT%H:%M:%SZ')
                 time = relativedelta(datetime.datetime.now(), con_followed_at)
                 string = ctx.author.name + ' has been following for '
@@ -427,8 +427,8 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + image_url)
                 await ctx.send(image_url)
             except openai.error.OpenAIError as e:
-                print(self.nick + ': ' + e)
-                await ctx.send(e)
+                print(self.nick + ': ' + e.error)
+                await ctx.send(e.error)
 
     @commands.cooldown(rate=1, per=float(config['options']['define_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -482,8 +482,11 @@ class Bot(commands.Bot):
                 except Exception as e:
                     print(e)
                     translated = GoogleTranslator(source='auto', target='en').translate(args)
-
-            response = 'From ' + language_long.name + ': ' + translated
+            try:
+                response = 'From ' + language_long.name + ': ' + translated
+            except Exception as e:
+                print(e)
+                response = 'From ' + language_short + ': ' + translated
             print(self.nick + ': ' + response)
             await ctx.send(response[:500])
 
@@ -721,15 +724,36 @@ class Bot(commands.Bot):
             machines = requests.get(url).json()
             # print(json.dumps(machines,indent=4,sort_keys=True))
             if args is not None:
+                last_ratio = 0
                 for machine in machines['machines']:
                     if machine['name'].lower() == args.lower():
-                        print(self.nick + ': ' + machine['name'] + ': ' + machine['ipdb_link'])
-                        await ctx.send(machine['name'] + ': ' + machine['ipdb_link'])
+                        output = machine['name'] + ': ' + machine['ipdb_link']
                         break
+                    try:
+                        # print(args.lower() + ', ' + machine['name'].lower() + ": " +
+                        #       str(fuzz.partial_ratio(args, machine['name'])))
+                        ratio = fuzz.partial_ratio(args.lower(), machine['name'].lower())
+                    except Exception as e:
+                        print(e)
+                        ratio = 0
+                    if ratio > last_ratio and machine['ipdb_link'] != '':
+                        last_ratio = ratio
+                        output = machine['name'] + ': ' + machine['ipdb_link']
+                print(self.nick + ': ' + output)
+                await ctx.send(output)
             else:
                 machine = random.choice(machines['machines'])
                 print(self.nick + ': ' + machine['name'] + ': ' + machine['ipdb_link'])
                 await ctx.send(machine['name'] + ': ' + machine['ipdb_link'])
+
+    @commands.command()
+    async def death(self, ctx: commands.Context):
+        if ctx.author.is_mod or ctx.author.is_broadcaster:
+            deaths = random.randint(1, 1000000)
+            print(self.nick + ': ' + ctx.channel.name + ' has died ' + str(deaths) +
+                  ' time/s or something, we\'re not really counting.')
+            await ctx.send(ctx.channel.name + ' has died ' + str(deaths) +
+                           ' time/s or something, we\'re not really counting.')
 
     @commands.command()
     async def clear(self, ctx: commands.Context):
