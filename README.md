@@ -24,7 +24,7 @@ You'll need keys:
 - Twitch login key
 - Twitch Dev client id and secret
 - openai api key
-- dictionaryapi.com api key
+- Oxford Dictionary api key
 - open weather maps api key
 - google cloud platform api key with timezone and geocoding apis enabled
 - detect language api key
