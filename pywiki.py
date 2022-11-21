@@ -204,21 +204,24 @@ class Bot(commands.Bot):
                         print(self.nick + ': ' + response)
                         await channel.send(response)
                 elif event_id == 'Image Generator':
-                    image = openai.Image.create(
-                        prompt=event.input,
-                        n=1,
-                        size="512x512"
-                    )
-                    type_tiny = pyshorteners.Shortener()
-                    image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
-                    print(self.nick + ': ' + image_url)
-                    await channel.send(image_url)
+                    try:
+                        image = openai.Image.create(
+                            prompt=event.input,
+                            n=1,
+                            size="512x512"
+                        )
+                        type_tiny = pyshorteners.Shortener()
+                        image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
+                        print(self.nick + ': ' + image_url)
+                        await channel.send(image_url)
+                    except openai.error.OpenAIError as e:
+                        print(self.nick + ': ' + e.error)
+                        await channel.send(e.error)
 
                 '''
                 elif event_id == 'Echo':
-                    user_input = event._data['message']['data']['redemption']['user_input']
-                    print(self.client.nick + ': ' + user_input)
-                    await channel.send(user_input)
+                    print(self.client.nick + ': ' + event.input)
+                    await channel.send(event.input)
                 '''
                 # # #---END EDIT ZONE---# # #
 
@@ -413,15 +416,19 @@ class Bot(commands.Bot):
     async def imagine(self, ctx: commands.Context, *, args):
         self.config.read(r'keys.ini')
         if self.config['options']['imagine_enabled'] == 'True':
-            image = openai.Image.create(
-                prompt=args,
-                n=1,
-                size="512x512"
-            )
-            type_tiny = pyshorteners.Shortener()
-            image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
-            print(self.nick + ': ' + image_url)
-            await ctx.send(image_url)
+            try:
+                image = openai.Image.create(
+                    prompt=args,
+                    n=1,
+                    size="512x512"
+                )
+                type_tiny = pyshorteners.Shortener()
+                image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
+                print(self.nick + ': ' + image_url)
+                await ctx.send(image_url)
+            except openai.error.OpenAIError as e:
+                print(self.nick + ': ' + e)
+                await ctx.send(e)
 
     @commands.cooldown(rate=1, per=float(config['options']['define_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -806,12 +813,7 @@ class Bot(commands.Bot):
 
 def cleanup():
     print('Exiting')
-    asyncio.run(bot_close())
     sys.exit()
-
-
-async def bot_close():
-    await bot.close()
 
 
 atexit.register(cleanup)
