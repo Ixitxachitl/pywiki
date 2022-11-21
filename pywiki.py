@@ -218,7 +218,7 @@ class Bot(commands.Bot):
 
         '''
         elif event_id == 'Echo':
-            print(self.client.nick + ': ' + event.input)
+            print(self.nick + ': ' + event.input)
             await channel.send(event.input)
         '''
         # # #---END EDIT ZONE---# # #
