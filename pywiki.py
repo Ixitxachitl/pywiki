@@ -309,6 +309,34 @@ class Bot(commands.Bot):
             print(self.nick + ": " + p)
             await ctx.send(p.replace('\r', '').replace('\n', '')[:500])
 
+    @commands.cooldown(rate=1, per=float(config['options']['uptime_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def uptime(self, ctx: commands.Context):
+        self.config.read(r'keys.ini')
+        if self.config['options']['uptime_enabled'] == 'True':
+            channel = await bot.fetch_users([ctx.channel.name])
+            stream = await bot.fetch_streams([channel[0].id])
+            try:
+                started_at = stream[0].started_at.strftime('%Y-%m-%dT%H:%M:%SZ')
+                con_started_at = datetime.datetime.strptime(started_at, '%Y-%m-%dT%H:%M:%SZ')
+                time = relativedelta(datetime.datetime.utcnow(), con_started_at)
+                string = ''
+                if time.hours == 1:
+                    string += str(time.hours) + ' hour '
+                elif time.hours > 1:
+                    string += str(time.hours) + ' hours '
+                if time.minutes == 1:
+                    string += str(time.minutes) + ' minute '
+                elif time.minutes > 1:
+                    string += str(time.minutes) + ' minutes '
+                print(self.nick + ': ' + channel[0].display_name + ' has been live for ' + string)
+                await ctx.send(channel[0].display_name + ' has been live for ' + string)
+            except Exception as e:
+                print(e)
+                print(self.nick + ': ' + channel[0].display_name + ' is not live')
+                await ctx.send(channel[0].display_name + ' is not live')
+
+
     @commands.cooldown(rate=1, per=float(config['options']['followage_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def followage(self, ctx: commands.Context):
@@ -323,20 +351,20 @@ class Bot(commands.Bot):
             try:
                 f = follow.followed_at.strftime('%Y-%m-%dT%H:%M:%SZ')
                 con_followed_at = datetime.datetime.strptime(f, '%Y-%m-%dT%H:%M:%SZ')
-                time = relativedelta(datetime.datetime.now(), con_followed_at)
-                string = ctx.author.name + ' has been following for '
+                time = relativedelta(datetime.datetime.utcnow(), con_followed_at)
+                string = ctx.author.display_name + ' has been following for '
                 if time.years == 1:
-                    string += str(time.years) + ' year, '
+                    string += str(time.years) + ' year '
                 elif time.years > 1:
-                    string += str(time.years) + ' years, '
+                    string += str(time.years) + ' years '
                 if time.months == 1:
-                    string += str(time.months) + ' month, '
+                    string += str(time.months) + ' month '
                 elif time.months > 1:
-                    string += str(time.months) + ' months, '
+                    string += str(time.months) + ' months '
                 if time.days == 1:
-                    string += str(time.days) + ' day, '
+                    string += str(time.days) + ' day '
                 elif time.days > 1:
-                    string += str(time.days) + ' days, '
+                    string += str(time.days) + ' days '
                 if time.hours == 1:
                     string += str(time.hours) + ' hour '
                 elif time.hours > 1:
@@ -345,8 +373,8 @@ class Bot(commands.Bot):
                 await ctx.send(string)
             except Exception as e:
                 print(e)
-                print(self.nick + ': ' + ctx.author.name + ' is not following')
-                await ctx.send(ctx.author.name + ' is not following')
+                print(self.nick + ': ' + ctx.author.display_name + ' is not following')
+                await ctx.send(ctx.author.display_name + ' is not following')
 
     @commands.cooldown(rate=1, per=float(config['options']['key_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -569,6 +597,8 @@ class Bot(commands.Bot):
             output += '!wiki '
         if self.config['options']['followage_enabled'] == 'True':
             output += '!followage '
+        if self.config['options']['uptime_enabled'] == 'True':
+            output += '!uptime '
         if self.config['options']['ai_enabled'] == 'True':
             output += '!ai '
         if self.config['options']['imagine_enabled'] == 'True':
