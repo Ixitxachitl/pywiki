@@ -18,6 +18,7 @@ Requirements:
 - Cinemagoer
 - BeautifulSoup
 - pyshorteners
+- FuzzyWuzzy
 - maybe more?...
 
 You'll need keys:
