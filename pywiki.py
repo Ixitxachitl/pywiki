@@ -300,16 +300,20 @@ class Bot(commands.Bot):
             await ctx.send('Set title to: ' + args)
 
     @commands.command()
-    async def setgame(self, ctx: commands.Context, *, args):
+    async def setgame(self, ctx: commands.Context, *, args=None):
         if ctx.message.author.is_broadcaster or ctx.message.author.is_mod and self.users_channel == ctx.channel.name:
             user = await bot.fetch_users([ctx.channel.name])
-            game = await bot.fetch_games(names=[args])
-            game_id = game[0].id
+            if args is not None:
+                game = await bot.fetch_games(names=[args])
+                game_id = game[0].id
+                data = {'game_id': str(game_id)}
+            else:
+                data = {'game_id': '0'}
             url = 'https://api.twitch.tv/helix/channels?broadcaster_id=' + str(user[0].id)
             headers = {'Authorization': 'Bearer ' + self.users_oauth_token,
                        'Client-ID': self.client_id,
                        'Content-Type': 'application/json'}
-            data = {'game_id': str(game_id)}
+
             response = requests.patch(url=url, headers=headers, data=json.dumps(data))
             print(response)
             print(self.nick + ': Set game to: ' + game[0].name)
