@@ -254,6 +254,8 @@ class Bot(commands.Bot):
         if isinstance(error, commands.CommandOnCooldown):
             await ctx.send('This command is on cooldown, you can use it in ' +
                            str(round(error.retry_after, 2)) + ' seconds')
+        else:
+            pprint(error)
 
     async def event_message(self, message):
         if message.echo:
@@ -308,6 +310,9 @@ class Bot(commands.Bot):
                 game_id = game[0].id
                 data = {'game_id': str(game_id)}
             else:
+                class GameObject(dict):
+                    name = "Nothing"
+                game = [GameObject()]
                 data = {'game_id': '0'}
             url = 'https://api.twitch.tv/helix/channels?broadcaster_id=' + str(user[0].id)
             headers = {'Authorization': 'Bearer ' + self.users_oauth_token,
