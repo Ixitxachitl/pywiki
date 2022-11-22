@@ -29,5 +29,8 @@ You'll need keys:
 - open weather maps api key
 - google cloud platform api key with timezone and geocoding apis enabled
 - detect language api key
+- To use pubsub you'll need an oauth key with the proper scope: 'channel:manage:redemptions'
+- To use settitle and setgame you'll need an outath key with the proper scope: 'channel:manage:broadcast'
+- Note: both of the custom scope keys are the same key, just make sure you request both scopes.
 
 Get the pokedex at https://github.com/fanzeyi/pokemon.json/blob/master/pokedex.json
