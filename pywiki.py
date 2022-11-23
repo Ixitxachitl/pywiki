@@ -308,7 +308,7 @@ class Bot(commands.Bot):
                     message.content.lower() == 'c' or \
                     message.content.lower() == 'd':
                 self.trivia_guesses[message.channel.name].update({message.author.name: message.content.lower()})
-                print(str(self.trivia_guesses))
+                # print(str(self.trivia_guesses[message.channel.name]))
 
         await self.handle_commands(message)
 
@@ -856,32 +856,40 @@ class Bot(commands.Bot):
                 self.trivia_guesses.update({ctx.channel.name: {}})
             url = 'https://opentdb.com/api.php?amount=1&type=multiple'
             trivia_object = requests.get(url).json()
-            pprint(trivia_object)
+            # print(json.dumps(trivia_object, indent=4, sort_keys=True))
             answers = trivia_object['results'][0]['incorrect_answers']
             answers.append(trivia_object['results'][0]['correct_answer'])
             random.shuffle(answers)
             index = ['(A)', '(B)', '(C)', '(D)']
             index2 = ['a', 'b', 'c', 'd']
             number = 0
+            correct_answer = ''
+            print(self.nick + ': ' + unescape(trivia_object['results'][0]['question']))
             await ctx.send(unescape(trivia_object['results'][0]['question']))
             await asyncio.sleep(2)
             for answer in answers:
                 if answer == trivia_object['results'][0]['correct_answer']:
                     correct_answer = index2[number]
                 answer = index[number] + ' ' + answer
+                print(self.nick + ': ' + unescape(answer))
                 await ctx.send(unescape(answer))
                 number += 1
                 await asyncio.sleep(2)
             await asyncio.sleep(28)
-            await ctx.send('The correct answer was ' + unescape(trivia_object['results'][0]['correct_answer']))
+            print(self.nick + ': ' + 'The correct answer was (' + correct_answer.upper() + ') ' +
+                  unescape(trivia_object['results'][0]['correct_answer']))
+            await ctx.send('The correct answer was (' + correct_answer.upper() + ') ' +
+                           unescape(trivia_object['results'][0]['correct_answer']))
             await asyncio.sleep(2)
             winners = 'Winners: '
             for key in self.trivia_guesses[ctx.channel.name]:
                 if self.trivia_guesses[ctx.channel.name][key] == correct_answer:
                     winners += key + ' '
             if winners != 'Winners: ':
+                print(self.nick + ': ' + winners)
                 await ctx.send(winners)
             else:
+                print(self.nick + ': Nobody Won')
                 await ctx.send('Nobody Won')
             self.trivia_guesses.pop(ctx.channel.name)
 
