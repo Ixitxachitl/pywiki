@@ -304,11 +304,13 @@ class Bot(commands.Bot):
                         await message.channel.send(response)
 
         if self.trivia_on is True:
+            if message.channel.name not in self.trivia_guesses.keys():
+                self.trivia_guesses.update({message.channel.name: {}})
             if message.content.lower() == 'a' or\
                     message.content.lower() == 'b' or\
                     message.content.lower() == 'c' or\
                     message.content.lower() == 'd':
-                self.trivia_guesses.update({message.author.name: message.content.lower()})
+                self.trivia_guesses[message.channel.name].update({message.author.name: message.content.lower()})
                 print(str(self.trivia_guesses))
 
         await self.handle_commands(message)
@@ -874,14 +876,14 @@ class Bot(commands.Bot):
             await ctx.send('The correct answer was ' + trivia_object['results'][0]['correct_answer'])
             await asyncio.sleep(2)
             winners = 'Winners: '
-            for key in self.trivia_guesses:
-                if self.trivia_guesses[key] == correct_answer:
+            for key in self.trivia_guesses[ctx.channel.name]:
+                if self.trivia_guesses[ctx.channel.name][key] == correct_answer:
                     winners += key + ' '
             if winners != 'Winners: ':
                 await ctx.send(winners)
             else:
                 await ctx.send('Nobody Won')
-            self.trivia_guesses = {}
+            self.trivia_guesses[ctx.channel.name].clear()
             self.trivia_on = False
 
     @commands.command()
