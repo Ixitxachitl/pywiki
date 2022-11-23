@@ -10,6 +10,7 @@ import re
 import sys
 import threading
 import urllib.parse
+from html import unescape
 from pprint import pprint
 
 import openai
@@ -136,6 +137,9 @@ class Bot(commands.Bot):
         }
 
         self.snes_connected = False
+
+        self.trivia_on = False
+        self.trivia_guesses = {}
 
         if self.config['options']['snes_enabled'] == 'True':
             self.snes = py2snes.snes()
@@ -298,6 +302,14 @@ class Bot(commands.Bot):
                         response = self.config['greetings'][key]
                         print(self.nick + ': ' + response)
                         await message.channel.send(response)
+
+        if self.trivia_on is True:
+            if message.content.lower() == 'a' or\
+                    message.content.lower() == 'b' or\
+                    message.content.lower() == 'c' or\
+                    message.content.lower() == 'd':
+                self.trivia_guesses.update({message.author.name: message.content.lower()})
+                print(str(self.trivia_guesses))
 
         await self.handle_commands(message)
 
@@ -681,6 +693,8 @@ class Bot(commands.Bot):
             output += '!imdb '
         if self.config['options']['pinball_enabled'] == 'True':
             output += '!pinball '
+        if self.config['options']['trivia_enabled'] == 'True':
+            output += '!trivia '
 
         print(self.nick + ': ' + output)
         await ctx.send(output)
@@ -831,6 +845,44 @@ class Bot(commands.Bot):
                 machine = random.choice(machines['machines'])
                 print(self.nick + ': ' + machine['name'] + ': ' + machine['ipdb_link'])
                 await ctx.send(machine['name'] + ': ' + machine['ipdb_link'])
+
+    @commands.cooldown(rate=1, per=float(config['options']['trivia_cooldown']), bucket=commands.Bucket.channel)
+    @commands.command()
+    async def trivia(self, ctx: commands.Context):
+        self.config.read(r'keys.ini')
+        if self.config['options']['trivia_enabled'] == 'True' and self.trivia_on is False:
+            self.trivia_on = True
+            url = 'https://opentdb.com/api.php?amount=1&type=multiple'
+            trivia_object = requests.get(url).json()
+            pprint(trivia_object)
+            answers = trivia_object['results'][0]['incorrect_answers']
+            answers.append(trivia_object['results'][0]['correct_answer'])
+            random.shuffle(answers)
+            index = ['(A)', '(B)', '(C)', '(D)']
+            index2 = ['a', 'b', 'c', 'd']
+            number = 0
+            await ctx.send(unescape(trivia_object['results'][0]['question']))
+            await asyncio.sleep(2)
+            for answer in answers:
+                if answer == trivia_object['results'][0]['correct_answer']:
+                    correct_answer = index2[number]
+                answer = index[number] + ' ' + answer
+                await ctx.send(unescape(answer))
+                number += 1
+                await asyncio.sleep(2)
+            await asyncio.sleep(28)
+            await ctx.send('The correct answer was ' + trivia_object['results'][0]['correct_answer'])
+            await asyncio.sleep(2)
+            winners = 'Winners: '
+            for key in self.trivia_guesses:
+                if self.trivia_guesses[key] == correct_answer:
+                    winners += key + ' '
+            if winners != 'Winners: ':
+                await ctx.send(winners)
+            else:
+                await ctx.send('Nobody Won')
+            self.trivia_guesses = {}
+            self.trivia_on = False
 
     @commands.command()
     async def death(self, ctx: commands.Context):
