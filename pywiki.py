@@ -874,7 +874,7 @@ class Bot(commands.Bot):
                 number += 1
                 await asyncio.sleep(2)
             await asyncio.sleep(28)
-            await ctx.send('The correct answer was ' + trivia_object['results'][0]['correct_answer'])
+            await ctx.send('The correct answer was ' + unescape(trivia_object['results'][0]['correct_answer']))
             await asyncio.sleep(2)
             winners = 'Winners: '
             for key in self.trivia_guesses[ctx.channel.name]:
