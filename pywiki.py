@@ -219,6 +219,57 @@ class Bot(commands.Bot):
             except openai.error.OpenAIError as e:
                 print(self.nick + ': ' + e.error.message)
                 await channel.send(e.error.message)
+        elif event_id == 'Trivia' and channel.name not in self.trivia_guesses:
+            if channel.name in self.trivia_guesses.keys():
+                self.trivia_guesses[channel.name].clear()
+            else:
+                self.trivia_guesses.update({channel.name: {}})
+            url = 'https://opentdb.com/api.php?amount=1&type=multiple'
+            trivia_object = requests.get(url).json()
+            # print(json.dumps(trivia_object, indent=4, sort_keys=True))
+            answers = trivia_object['results'][0]['incorrect_answers']
+            answers.append(trivia_object['results'][0]['correct_answer'])
+            random.shuffle(answers)
+            index = ['(A)', '(B)', '(C)', '(D)']
+            index2 = ['a', 'b', 'c', 'd']
+            number = 0
+            correct_answer = ''
+            print(self.nick + ': ' + unescape(trivia_object['results'][0]['question']))
+            await channel.send(unescape(trivia_object['results'][0]['question']))
+            await asyncio.sleep(0)
+            for answer in answers:
+                if answer == trivia_object['results'][0]['correct_answer']:
+                    correct_answer = index2[number]
+                answer = index[number] + ' ' + answer
+                print(self.nick + ': ' + unescape(answer))
+                await channel.send(unescape(answer))
+                number += 1
+                await asyncio.sleep(0)
+            await asyncio.sleep(30)
+            print(self.nick + ': ' + 'The correct answer was (' + correct_answer.upper() + ') ' +
+                  unescape(trivia_object['results'][0]['correct_answer']))
+            await channel.send('The correct answer was (' + correct_answer.upper() + ') ' +
+                               unescape(trivia_object['results'][0]['correct_answer']))
+            await asyncio.sleep(0)
+            winners = 'Winners: '
+            with open('winners.json',  encoding='utf8') as infile:
+                winner_list = json.load(infile)
+            for key in self.trivia_guesses[channel.name]:
+                if self.trivia_guesses[channel.name][key] == correct_answer:
+                    if key in winner_list.keys():
+                        winner_list.update({key: winner_list[key] + 1})
+                    else:
+                        winner_list.update({key: 1})
+                    with open('winners.json', 'w') as outfile:
+                        json.dump(winner_list, outfile)
+                    winners += key + ' '
+            if winners != 'Winners: ':
+                print(self.nick + ': ' + winners)
+                await channel.send(winners)
+            else:
+                print(self.nick + ': Nobody Won')
+                await channel.send('Nobody Won')
+            self.trivia_guesses.pop(channel.name)
 
         '''
         elif event_id == 'Echo':
@@ -694,6 +745,7 @@ class Bot(commands.Bot):
             output += '!pinball '
         if self.config['options']['trivia_enabled'] == 'True':
             output += '!trivia '
+            output += '!leaderboard '
 
         print(self.nick + ': ' + output)
         await ctx.send(output)
@@ -882,8 +934,16 @@ class Bot(commands.Bot):
                            unescape(trivia_object['results'][0]['correct_answer']))
             await asyncio.sleep(2)
             winners = 'Winners: '
+            with open('winners.json',  encoding='utf8') as infile:
+                winner_list = json.load(infile)
             for key in self.trivia_guesses[ctx.channel.name]:
                 if self.trivia_guesses[ctx.channel.name][key] == correct_answer:
+                    if key in winner_list.keys():
+                        winner_list.update({key: winner_list[key] + 1})
+                    else:
+                        winner_list.update({key: 1})
+                    with open('winners.json', 'w') as outfile:
+                        json.dump(winner_list, outfile)
                     winners += key + ' '
             if winners != 'Winners: ':
                 print(self.nick + ': ' + winners)
@@ -892,6 +952,26 @@ class Bot(commands.Bot):
                 print(self.nick + ': Nobody Won')
                 await ctx.send('Nobody Won')
             self.trivia_guesses.pop(ctx.channel.name)
+
+    @commands.command()
+    async def leaderboard(self, ctx: commands.Context):
+        self.config.read(r'keys.ini')
+        if self.config['options']['trivia_enabled'] == 'True':
+            with open('winners.json',  encoding='utf8') as infile:
+                winner_list = json.load(infile)
+            winner_list = sorted(winner_list.items(), key=lambda item: item[1])
+            winner_list.reverse()
+            winner_list = dict(winner_list)
+            keys = list(winner_list)
+            top5 = 1
+            output = ''
+            for key in keys:
+                output += '#' + str(top5) + ' - ' + key + ': ' + str(winner_list[key]) + ' '
+                top5 += 1
+                if top5 == 5:
+                    break
+            print(self.nick + ': ' + output)
+            await ctx.send(output)
 
     @commands.command()
     async def death(self, ctx: commands.Context):
