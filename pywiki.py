@@ -138,7 +138,6 @@ class Bot(commands.Bot):
 
         self.snes_connected = False
 
-        self.trivia_on = False
         self.trivia_guesses = {}
 
         if self.config['options']['snes_enabled'] == 'True':
@@ -303,14 +302,13 @@ class Bot(commands.Bot):
                         print(self.nick + ': ' + response)
                         await message.channel.send(response)
 
-        if self.trivia_on is True:
-            if message.channel.name in self.trivia_guesses.keys():
-                if message.content.lower() == 'a' or \
-                        message.content.lower() == 'b' or \
-                        message.content.lower() == 'c' or \
-                        message.content.lower() == 'd':
-                    self.trivia_guesses[message.channel.name].update({message.author.name: message.content.lower()})
-                    print(str(self.trivia_guesses))
+        if message.channel.name in self.trivia_guesses.keys():
+            if message.content.lower() == 'a' or \
+                    message.content.lower() == 'b' or \
+                    message.content.lower() == 'c' or \
+                    message.content.lower() == 'd':
+                self.trivia_guesses[message.channel.name].update({message.author.name: message.content.lower()})
+                print(str(self.trivia_guesses))
 
         await self.handle_commands(message)
 
@@ -851,7 +849,7 @@ class Bot(commands.Bot):
     @commands.command()
     async def trivia(self, ctx: commands.Context):
         self.config.read(r'keys.ini')
-        if self.config['options']['trivia_enabled'] == 'True' and self.trivia_on is False:
+        if self.config['options']['trivia_enabled'] == 'True' and ctx.channel.name not in self.trivia_guesses:
             self.trivia_on = True
             if ctx.channel.name in self.trivia_guesses.keys():
                 self.trivia_guesses[ctx.channel.name].clear()
@@ -886,8 +884,7 @@ class Bot(commands.Bot):
                 await ctx.send(winners)
             else:
                 await ctx.send('Nobody Won')
-            self.trivia_guesses[ctx.channel.name].clear()
-            self.trivia_on = False
+            self.trivia_guesses.pop(ctx.channel.name)
 
     @commands.command()
     async def death(self, ctx: commands.Context):
