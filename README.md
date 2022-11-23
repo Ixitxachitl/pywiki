@@ -19,6 +19,7 @@ Requirements:
 - BeautifulSoup
 - pyshorteners
 - FuzzyWuzzy
+- rich
 - maybe more?...
 
 You'll need keys:
