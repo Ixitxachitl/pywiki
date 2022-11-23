@@ -779,7 +779,7 @@ class Bot(commands.Bot):
                 if p.get_text().strip().lower().startswith(pokemon.lower()):
                     description = p.get_text().strip()
                     break
-            flavor_text = ''
+            flavor_texts = ['']
             try:
                 url = 'https://pokeapi.co/api/v2/pokemon-species/' + pokemon.lower()
                 headers = {
