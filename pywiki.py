@@ -28,6 +28,7 @@ from geopy import geocoders
 from imdb import Cinemagoer
 from pyowm.owm import OWM
 from pytz import timezone
+from rich import print
 from twitchio.ext import commands
 from twitchio.ext import pubsub
 
@@ -213,8 +214,8 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + image_url)
                 await channel.send(image_url)
             except openai.error.OpenAIError as e:
-                print(self.nick + ': ' + e.error)
-                await channel.send(e.error)
+                print(self.nick + ': ' + e.error.message)
+                await channel.send(e.error.message)
 
         '''
         elif event_id == 'Echo':
@@ -245,17 +246,22 @@ class Bot(commands.Bot):
             await self.snes_connect()
         if self.config['options']['pubsub_enabled'] == 'True':
             await self.pubsub.subscribe_topics(self.topics)
-            print('Pubsub Ready')
+            print('[bold green]Pubsub Ready[/]')
 
     async def event_channel_joined(self, channel):
         print('Joined ' + channel.name)
 
     async def event_command_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
+            print('[bold red]' + str(error) + '[/]')
+            print(self.nick + ': This command is on cooldown, you can use it in ' +
+                  str(round(error.retry_after, 2)) + ' seconds')
             await ctx.send('This command is on cooldown, you can use it in ' +
                            str(round(error.retry_after, 2)) + ' seconds')
+        elif isinstance(error, commands.CommandNotFound):
+            print('[bold red]' + error.args[0] + '[/]')
         else:
-            pprint(error)
+            raise error
 
     async def event_message(self, message):
         if message.echo:
@@ -264,10 +270,18 @@ class Bot(commands.Bot):
         if message.author.name == self.nick:
             return
 
-        if message.content.startswith(self.prefix + ' '):
-            message.content = message.content[0:1] + message.content[2:].strip()
-
-        print(message.author.name + ': ' + message.content)
+        start_color = '[bold ' + message.author.color + ']'
+        end_color = '[/]'
+        author = message.author.display_name
+        if message.author.is_subscriber:
+            author = '✨' + author
+        if message.author.is_vip:
+            author = '💎' + author
+        if message.author.is_mod:
+            author = '🗡️' + author
+        if message.author.is_broadcaster:
+            author = '🎥️' + author
+        print(start_color + author + end_color + ': ' + message.content)
 
         self.config.read(r'keys.ini')
 
@@ -312,6 +326,7 @@ class Bot(commands.Bot):
             else:
                 class GameObject(dict):
                     name = "Nothing"
+
                 game = [GameObject()]
                 data = {'game_id': '0'}
             url = 'https://api.twitch.tv/helix/channels?broadcaster_id=' + str(user[0].id)
@@ -462,14 +477,13 @@ class Bot(commands.Bot):
 
             response = self.ai_complete(self, args)
 
-            while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
-                response.choices[0].text = response.choices[0].text[1:]
-
             try:
+                while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
+                    response.choices[0].text = response.choices[0].text[1:]
                 print(self.nick + ': ' + response.choices[0].text.strip())
                 await ctx.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
             except AttributeError as e:
-                print(e)
+                print(str(e))
                 print(self.nick + ': ' + response)
                 await ctx.send(response)
 
@@ -489,8 +503,8 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + image_url)
                 await ctx.send(image_url)
             except openai.error.OpenAIError as e:
-                print(self.nick + ': ' + e.error)
-                await ctx.send(e.error)
+                print(self.nick + ': ' + e.error.message)
+                await ctx.send(e.error.message)
 
     @commands.cooldown(rate=1, per=float(config['options']['define_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -735,7 +749,7 @@ class Bot(commands.Bot):
                 movie_info = self.ia.get_movie(movie_id)
                 # print(movie_info.get('plot')[0])
                 return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' \
-                    + movie_info.get('plot')[0]
+                                + movie_info.get('plot')[0]
                 print(self.nick + ': ' + return_string)
                 await ctx.send(return_string[:500])
 
@@ -772,10 +786,17 @@ class Bot(commands.Bot):
                     'User-Agent': 'pyWiki'
                 }
                 entry = requests.get(url, headers=headers).json()
-                flavor_text = entry['flavor_text_entries'][0]['flavor_text']
+
+                flavor_texts = []
+                for entries in entry['flavor_text_entries']:
+                    if entries['language']['name'] == 'en':
+                        flavor_texts.append(entries['flavor_text'])
+
+                random.shuffle(flavor_texts)
+
             except requests.exceptions.JSONDecodeError as e:
                 print(e)
-            output = description + ' ' + flavor_text
+            output = description + ' ' + flavor_texts[0]
             print(self.nick + ': ' + output.replace('\r', ' ').replace('\n', ' '))
             await ctx.send(output.replace('\r', ' ').replace('\n', ' ')[:500])
 
@@ -815,9 +836,10 @@ class Bot(commands.Bot):
     async def death(self, ctx: commands.Context):
         if ctx.author.is_mod or ctx.author.is_broadcaster:
             deaths = random.randint(1, 1000000)
-            print(self.nick + ': ' + ctx.channel.name + ' has died ' + str(deaths) +
+            broadcaster = await bot.fetch_users([ctx.channel.name])
+            print(self.nick + ': ' + broadcaster[0].display_name + ' has died ' + str(deaths) +
                   ' time/s or something, we\'re not really counting.')
-            await ctx.send(ctx.channel.name + ' has died ' + str(deaths) +
+            await ctx.send(broadcaster[0].display_name + ' has died ' + str(deaths) +
                            ' time/s or something, we\'re not really counting.')
 
     @commands.command()
@@ -840,18 +862,23 @@ class Bot(commands.Bot):
     @staticmethod
     def ai_complete(self, message):
         self.config.read(r'keys.ini')
-        completion = openai.Completion.create(temperature=float(self.config['options']['temperature']),
-                                              max_tokens=int(self.config['options']['tokens']),
-                                              engine=self.config['options']['ai_engine'],
-                                              prompt=message)
-        print(json.dumps(completion, indent=4, sort_keys=True))
-        moderation = openai.Moderation.create(input=completion.choices[0].text, model='text-moderation-stable')
-        print(json.dumps(moderation, indent=4, sort_keys=True))
+        moderate_input = openai.Moderation.create(input=message, model='text-moderation-latest')
+        print(json.dumps(moderate_input, indent=4, sort_keys=True))
+        if not moderate_input.results[0]['flagged']:
+            completion = openai.Completion.create(temperature=float(self.config['options']['temperature']),
+                                                  max_tokens=int(self.config['options']['tokens']),
+                                                  engine=self.config['options']['ai_engine'],
+                                                  prompt=message)
+            print(json.dumps(completion, indent=4, sort_keys=True))
+            moderation = openai.Moderation.create(input=completion.choices[0].text, model='text-moderation-latest')
+            print(json.dumps(moderation, indent=4, sort_keys=True))
 
-        if not moderation.results[0]['flagged']:
-            return completion
+            if not moderation.results[0]['flagged']:
+                return completion
+            else:
+                return 'Response Flagged'
         else:
-            return 'Response Flagged'
+            return 'Prompt Flagged'
 
     @staticmethod
     def getjoke(url):
