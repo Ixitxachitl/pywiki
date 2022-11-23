@@ -304,14 +304,13 @@ class Bot(commands.Bot):
                         await message.channel.send(response)
 
         if self.trivia_on is True:
-            if message.channel.name not in self.trivia_guesses.keys():
-                self.trivia_guesses.update({message.channel.name: {}})
-            if message.content.lower() == 'a' or\
-                    message.content.lower() == 'b' or\
-                    message.content.lower() == 'c' or\
-                    message.content.lower() == 'd':
-                self.trivia_guesses[message.channel.name].update({message.author.name: message.content.lower()})
-                print(str(self.trivia_guesses))
+            if message.channel.name in self.trivia_guesses.keys():
+                if message.content.lower() == 'a' or \
+                        message.content.lower() == 'b' or \
+                        message.content.lower() == 'c' or \
+                        message.content.lower() == 'd':
+                    self.trivia_guesses[message.channel.name].update({message.author.name: message.content.lower()})
+                    print(str(self.trivia_guesses))
 
         await self.handle_commands(message)
 
@@ -765,7 +764,7 @@ class Bot(commands.Bot):
                 movie_info = self.ia.get_movie(movie_id)
                 # print(movie_info.get('plot')[0])
                 return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' \
-                                + movie_info.get('plot')[0]
+                    + movie_info.get('plot')[0]
                 print(self.nick + ': ' + return_string)
                 await ctx.send(return_string[:500])
 
@@ -854,6 +853,10 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['trivia_enabled'] == 'True' and self.trivia_on is False:
             self.trivia_on = True
+            if ctx.channel.name in self.trivia_guesses.keys():
+                self.trivia_guesses[ctx.channel.name].clear()
+            else:
+                self.trivia_guesses.update({ctx.channel.name: {}})
             url = 'https://opentdb.com/api.php?amount=1&type=multiple'
             trivia_object = requests.get(url).json()
             pprint(trivia_object)
