@@ -591,7 +591,7 @@ class Bot(commands.Bot):
                     # # # This is super dirty and raises a runtime error
                     for item in ctx.command._cooldowns[0]._cache:
                         if item[1] == ctx.message.author.id:
-                            ctx.command._cooldowns[0]._cache.pop(item)
+                            ctx.command._cooldowns[0]._cache.update({item: (0, 0)})
                     # # # Don't ever do this ^
 
     @commands.cooldown(rate=1, per=float(config['options']['define_cooldown']), bucket=commands.Bucket.member)
