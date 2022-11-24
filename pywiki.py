@@ -314,6 +314,8 @@ class Bot(commands.Bot):
                            str(round(error.retry_after, 2)) + ' seconds')
         elif isinstance(error, commands.CommandNotFound):
             print('[bold red]' + error.args[0] + '[/]')
+        elif isinstance(error, commands.MissingRequiredArgument):
+            print('[bold red]' + error.args[0] + '[/]')
         else:
             raise error
 
@@ -364,18 +366,22 @@ class Bot(commands.Bot):
         await self.handle_commands(message)
 
     @commands.command()
-    async def settitle(self, ctx: commands.Context, *, args):
+    async def settitle(self, ctx: commands.Context, *, args=None):
         if ctx.message.author.is_broadcaster or ctx.message.author.is_mod and self.users_channel == ctx.channel.name:
-            user = await bot.fetch_users([ctx.channel.name])
-            url = 'https://api.twitch.tv/helix/channels?broadcaster_id=' + str(user[0].id)
-            headers = {'Authorization': 'Bearer ' + self.users_oauth_token,
-                       'Client-ID': self.client_id,
-                       'Content-Type': 'application/json'}
-            data = {'title': args}
-            response = requests.patch(url=url, headers=headers, data=json.dumps(data))
-            print(response)
-            print(self.nick + ': Set title to: ' + args)
-            await ctx.send('Set title to: ' + args)
+            if args is None:
+                print(self.nick + ': Please provide an input text')
+                await ctx.send('Please provide an input text')
+            else:
+                user = await bot.fetch_users([ctx.channel.name])
+                url = 'https://api.twitch.tv/helix/channels?broadcaster_id=' + str(user[0].id)
+                headers = {'Authorization': 'Bearer ' + self.users_oauth_token,
+                           'Client-ID': self.client_id,
+                           'Content-Type': 'application/json'}
+                data = {'title': args}
+                response = requests.patch(url=url, headers=headers, data=json.dumps(data))
+                print(response)
+                print(self.nick + ': Set title to: ' + args)
+                await ctx.send('Set title to: ' + args)
 
     @commands.command()
     async def setgame(self, ctx: commands.Context, *, args=None):
@@ -403,27 +409,31 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['wiki_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def wiki(self, ctx: commands.Context, *, args):
+    async def wiki(self, ctx: commands.Context, *, args=None):
         self.config.read(r'keys.ini')
         if self.config['options']['wiki_enabled'] == 'True':
-            wikipedia.set_lang("en")
-            try:
+            if args is None:
+                print(self.nick + ': Please provide an input text')
+                await ctx.send('Please provide an input text')
+            else:
+                wikipedia.set_lang("en")
                 try:
-                    p = wikipedia.summary(args, sentences=3, auto_suggest=False)
-                except wikipedia.DisambiguationError as e:
-                    print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
-                    p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
-            except Exception as e:
-                print(e)
-                try:
-                    p = wikipedia.summary(args, sentences=3, auto_suggest=True)
-                except wikipedia.DisambiguationError as e:
-                    print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
-                    p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
-                except wikipedia.PageError as e:
-                    p = str(e)
-            print(self.nick + ': ' + p)
-            await ctx.send(p.replace('\r', '').replace('\n', '')[:500])
+                    try:
+                        p = wikipedia.summary(args, sentences=3, auto_suggest=False)
+                    except wikipedia.DisambiguationError as e:
+                        print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
+                        p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
+                except Exception as e:
+                    print(e)
+                    try:
+                        p = wikipedia.summary(args, sentences=3, auto_suggest=True)
+                    except wikipedia.DisambiguationError as e:
+                        print('\n'.join('{}: {}'.format(*k) for k in enumerate(e.options)))
+                        p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
+                    except wikipedia.PageError as e:
+                        p = str(e)
+                print(self.nick + ': ' + p)
+                await ctx.send(p.replace('\r', '').replace('\n', '')[:500])
 
     @commands.cooldown(rate=1, per=float(config['options']['uptime_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -493,198 +503,224 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['key_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def key(self, ctx: commands.Context, args):
+    async def key(self, ctx: commands.Context, args=None):
         self.config.read(r'keys.ini')
         if self.config['options']['key_enabled'] == 'True':
-            try:
-                if len(ctx.message.content.split(' ', 1)) != 2:
-                    raise Exception('Syntax Error')
-                key_index = ''
-                command = args
-                if len(command) == 2:
-                    if command[1] == '#':
-                        key_index = command[0].lower() + ' sharp'
-                    if command[1] == 'b':
-                        key_index = command[0].lower() + ' flat'
-                elif len(command) == 1:
-                    key_index = command[0].lower()
-                else:
-                    raise Exception('Syntax Error')
-
-                if key_index in self.keysig:
-                    if command[0].isupper():
-                        if 'major' in self.keysig[key_index]:
-                            print(self.nick + ': ' + self.keysig[key_index]['major'])
-                            await ctx.send(self.keysig[key_index]['major'])
-                        else:
-                            raise Exception('Syntax Error')
+            if args is None:
+                print(self.nick + ': Syntax Error')
+                await ctx.send('Syntax Error')
+            else:
+                try:
+                    if len(ctx.message.content.split(' ', 1)) != 2:
+                        raise Exception('Syntax Error')
+                    key_index = ''
+                    command = args
+                    if len(command) == 2:
+                        if command[1] == '#':
+                            key_index = command[0].lower() + ' sharp'
+                        if command[1] == 'b':
+                            key_index = command[0].lower() + ' flat'
+                    elif len(command) == 1:
+                        key_index = command[0].lower()
                     else:
-                        if 'minor' in self.keysig[key_index]:
-                            print(self.nick + ': ' + self.keysig[key_index]['minor'])
-                            await ctx.send(self.keysig[key_index]['minor'])
-                        else:
-                            raise Exception('Syntax Error')
-                else:
-                    raise Exception('Syntax Error')
+                        raise Exception('Syntax Error')
 
-            except Exception as e:
-                print(self.nick + ': ' + str(e))
-                await ctx.send(str(e))
+                    if key_index in self.keysig:
+                        if command[0].isupper():
+                            if 'major' in self.keysig[key_index]:
+                                print(self.nick + ': ' + self.keysig[key_index]['major'])
+                                await ctx.send(self.keysig[key_index]['major'])
+                            else:
+                                raise Exception('Syntax Error')
+                        else:
+                            if 'minor' in self.keysig[key_index]:
+                                print(self.nick + ': ' + self.keysig[key_index]['minor'])
+                                await ctx.send(self.keysig[key_index]['minor'])
+                            else:
+                                raise Exception('Syntax Error')
+                    else:
+                        raise Exception('Syntax Error')
+
+                except Exception as e:
+                    print(self.nick + ': ' + str(e))
+                    await ctx.send(str(e))
 
     @commands.cooldown(rate=1, per=float(config['options']['ai_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def ai(self, ctx: commands.Context, *, args):
+    async def ai(self, ctx: commands.Context, *, args=None):
         self.config.read(r'keys.ini')
         if self.config['options']['ai_enabled'] == 'True':
+            if args is None:
+                print(self.nick + ': Please provide an input text')
+                await ctx.send('Please provide an input text')
+            else:
+                response = self.ai_complete(self, args)
 
-            response = self.ai_complete(self, args)
-
-            try:
-                while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
-                    response.choices[0].text = response.choices[0].text[1:]
-                print(self.nick + ': ' + response.choices[0].text.strip())
-                await ctx.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
-            except AttributeError as e:
-                print(str(e))
-                print(self.nick + ': ' + response)
-                await ctx.send(response)
+                try:
+                    while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
+                        response.choices[0].text = response.choices[0].text[1:]
+                    print(self.nick + ': ' + response.choices[0].text.strip())
+                    await ctx.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
+                except AttributeError as e:
+                    print(str(e))
+                    print(self.nick + ': ' + response)
+                    await ctx.send(response)
 
     @commands.cooldown(rate=1, per=float(config['options']['imagine_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def imagine(self, ctx: commands.Context, *, args):
+    async def imagine(self, ctx: commands.Context, *, args=None):
         self.config.read(r'keys.ini')
         if self.config['options']['imagine_enabled'] == 'True':
-            try:
-                image = openai.Image.create(
-                    prompt=args,
-                    n=1,
-                    size="512x512"
-                )
-                type_tiny = pyshorteners.Shortener()
-                image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
-                print(self.nick + ': ' + image_url)
-                await ctx.send(image_url)
-            except openai.error.OpenAIError as e:
-                print(self.nick + ': ' + e.error.message)
-                await ctx.send(e.error.message)
+            if args is None:
+                print(self.nick + ': Please provide an input text')
+                await ctx.send('Please provide an input text')
+            else:
+                try:
+                    image = openai.Image.create(
+                        prompt=args,
+                        n=1,
+                        size="512x512"
+                    )
+                    type_tiny = pyshorteners.Shortener()
+                    image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
+                    print(self.nick + ': ' + image_url)
+                    await ctx.send(image_url)
+                except openai.error.OpenAIError as e:
+                    print(self.nick + ': ' + e.error.message)
+                    await ctx.send(e.error.message)
 
     @commands.cooldown(rate=1, per=float(config['options']['define_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def define(self, ctx: commands.Context, *, args):
+    async def define(self, ctx: commands.Context, *, args=None):
         self.config.read(r'keys.ini')
         if self.config['options']['define_enabled'] == 'True':
-            language = 'en-us'
-            word = args
-            url = "https://od-api.oxforddictionaries.com:443/api/v2/entries/" + language + "/" + word.lower()
-            headers = {"app_id": self.oxford_app_id, "app_key": self.oxford_api_key}
-            r = requests.get(url, headers=headers).json()
-            definition = r['results'][0]['lexicalEntries'][0]['entries'][0]['senses'][0]['definitions'][0].capitalize()
-            word = r['results'][0]['word'].capitalize()
-            category = r['results'][0]['lexicalEntries'][0]['lexicalCategory']['text']
-            pronunciation = r['results'][0]['lexicalEntries'][0]['entries'][0]['pronunciations'][0]['phoneticSpelling']
-            out = word + ' - ' + category + ' - ' + pronunciation + ': ' + definition
-            print(self.nick + ': ' + out)
-            await ctx.send(out)
+            if args is None:
+                print(self.nick + ': Please provide an input text')
+                await ctx.send('Please provide an input text')
+            else:
+                language = 'en-us'
+                word = args
+                url = "https://od-api.oxforddictionaries.com:443/api/v2/entries/" + language + "/" + word.lower()
+                headers = {"app_id": self.oxford_app_id, "app_key": self.oxford_api_key}
+                r = requests.get(url, headers=headers).json()
+                definition = r['results'][0]['lexicalEntries'][0]['entries'][0]['senses'][0]['definitions'][0].capitalize()
+                word = r['results'][0]['word'].capitalize()
+                category = r['results'][0]['lexicalEntries'][0]['lexicalCategory']['text']
+                pronunciation = r['results'][0]['lexicalEntries'][0]['entries'][0]['pronunciations'][0]['phoneticSpelling']
+                out = word + ' - ' + category + ' - ' + pronunciation + ': ' + definition
+                print(self.nick + ': ' + out)
+                await ctx.send(out)
 
     @commands.cooldown(rate=1, per=float(config['options']['etymology_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def etymology(self, ctx: commands.Context, *, args):
+    async def etymology(self, ctx: commands.Context, *, args=None):
         self.config.read(r'keys.ini')
         if self.config['options']['etymology_enabled'] == 'True':
-            language = 'en-us'
-            word = args
-            url = "https://od-api.oxforddictionaries.com:443/api/v2/entries/" + language + "/" + word.lower()
-            headers = {"app_id": self.oxford_app_id, "app_key": self.oxford_api_key}
-            r = requests.get(url, headers=headers).json()
-            etymology = r['results'][0]['lexicalEntries'][0]['entries'][0]['etymologies'][0].capitalize()
-            word = r['results'][0]['word'].capitalize()
+            if args is None:
+                print(self.nick + ': Please provide an input text')
+                await ctx.send('Please provide an input text')
+            else:
+                language = 'en-us'
+                word = args
+                url = "https://od-api.oxforddictionaries.com:443/api/v2/entries/" + language + "/" + word.lower()
+                headers = {"app_id": self.oxford_app_id, "app_key": self.oxford_api_key}
+                r = requests.get(url, headers=headers).json()
+                etymology = r['results'][0]['lexicalEntries'][0]['entries'][0]['etymologies'][0].capitalize()
+                word = r['results'][0]['word'].capitalize()
 
-            out = word + ': ' + etymology
-            print(self.nick + ': ' + out)
-            await ctx.send(out)
+                out = word + ': ' + etymology
+                print(self.nick + ': ' + out)
+                await ctx.send(out)
 
     @commands.cooldown(rate=1, per=float(config['options']['translate_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def translate(self, ctx: commands.Context, *, args):
+    async def translate(self, ctx: commands.Context, *, args=None):
         self.config.read(r'keys.ini')
         if self.config['options']['translate_enabled'] == 'True':
-            language_short = single_detection(args, api_key=self.config['keys'][
-                'detect_language_api_key'])
-            language_long = pycountry.languages.get(alpha_2=language_short)
             try:
-                translated = GoogleTranslator(source=language_short, target='en').translate(args)
-            except Exception as e:
-                print(e)
+                language_short = single_detection(args, api_key=self.config['keys']['detect_language_api_key'])
+                language_long = pycountry.languages.get(alpha_2=language_short)
                 try:
-                    translated = GoogleTranslator(source=language_long.name, target='en').translate(args)
+                    translated = GoogleTranslator(source=language_short, target='en').translate(args)
                 except Exception as e:
                     print(e)
-                    translated = GoogleTranslator(source='auto', target='en').translate(args)
-            try:
-                response = 'From ' + language_long.name + ': ' + translated
+                    try:
+                        translated = GoogleTranslator(source=language_long.name, target='en').translate(args)
+                    except Exception as e:
+                        print(e)
+                        translated = GoogleTranslator(source='auto', target='en').translate(args)
+                try:
+                    response = 'From ' + language_long.name + ': ' + translated
+                except Exception as e:
+                    print(e)
+                    response = 'From ' + language_short + ': ' + translated
+                print(self.nick + ': ' + response)
+                await ctx.send(response[:500])
             except Exception as e:
-                print(e)
-                response = 'From ' + language_short + ': ' + translated
-            print(self.nick + ': ' + response)
-            await ctx.send(response[:500])
+                print(self.nick + ': ' + str(e.args[0]))
+                await ctx.send(str(e.args[0]))
 
     @commands.cooldown(rate=1, per=float(config['options']['weather_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def weather(self, ctx: commands.Context, *, args):
+    async def weather(self, ctx: commands.Context, *, args=None):
         self.config.read(r'keys.ini')
         if self.config['options']['weather_enabled'] == 'True':
-            owm = OWM(self.config['keys']['owm_api_key'])
-            mgr = owm.weather_manager()
-            try:
-                # F = 1.8(K - 273) + 32
-                # C = K – 273.15
-                g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
-                observation = mgr.weather_at_place(args)
-                one_call = mgr.one_call(lat=observation.location.lat, lon=observation.location.lon)
-                place_object = g.reverse((observation.location.lat, observation.location.lon))
-                # print(json.dumps(place_object.raw, indent=4, sort_keys=True))
+            if args is None:
+                print(self.nick + ': Please provide a location')
+                await ctx.send('Please provide a location')
+            else:
+                owm = OWM(self.config['keys']['owm_api_key'])
+                mgr = owm.weather_manager()
+                try:
+                    # F = 1.8(K - 273) + 32
+                    # C = K – 273.15
+                    g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
+                    observation = mgr.weather_at_place(args)
+                    one_call = mgr.one_call(lat=observation.location.lat, lon=observation.location.lon)
+                    place_object = g.reverse((observation.location.lat, observation.location.lon))
+                    # print(json.dumps(place_object.raw, indent=4, sort_keys=True))
 
-                city = ''
-                state = ''
-                country = ''
-                plus_code = ''
+                    city = ''
+                    state = ''
+                    country = ''
+                    plus_code = ''
 
-                for item in place_object.raw['address_components']:
-                    if 'locality' in item['types']:
-                        city = item['long_name']
-                    if 'administrative_area_level_1' in item['types']:
-                        state = item['short_name']
-                    if 'country' in item['types']:
-                        country = item['short_name']
-                    if 'plus_code' in item['types']:
-                        plus_code = item['short_name']
+                    for item in place_object.raw['address_components']:
+                        if 'locality' in item['types']:
+                            city = item['long_name']
+                        if 'administrative_area_level_1' in item['types']:
+                            state = item['short_name']
+                        if 'country' in item['types']:
+                            country = item['short_name']
+                        if 'plus_code' in item['types']:
+                            plus_code = item['short_name']
 
-                place = ''
-                if city != '':
-                    place += city + ', '
-                if state != '':
-                    place += state + ', '
-                if country != '':
-                    place += country
-                if place == '':
-                    place += plus_code
+                    place = ''
+                    if city != '':
+                        place += city + ', '
+                    if state != '':
+                        place += state + ', '
+                    if country != '':
+                        place += country
+                    if place == '':
+                        place += plus_code
 
-                temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
-                temp_c = int(observation.weather.temp['temp'] - 273.15)
-                f_temp_f = int(one_call.forecast_daily[1].temperature('fahrenheit').get('max', None))
-                f_temp_c = int(one_call.forecast_daily[1].temperature('celsius').get('max', None))
-                print(self.nick + ': The temperature in ' + place + ' is ' + str(temp_f) + '°F (' + str(
-                    temp_c) + '°C) and ' + observation.weather.detailed_status
-                      + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' + one_call.forecast_daily[
-                          1].detailed_status)
-                await ctx.send('The temperature in ' + place + ' is ' + str(temp_f) + '°F (' + str(
-                    temp_c) + '°C) and ' + observation.weather.detailed_status
-                               + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' +
-                               one_call.forecast_daily[1].detailed_status)
-            except Exception as e:
-                print(e)
-                print(self.nick + ': Location ' + args + ' not found.')
-                await ctx.send('Location ' + args + ' not found.')
+                    temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
+                    temp_c = int(observation.weather.temp['temp'] - 273.15)
+                    f_temp_f = int(one_call.forecast_daily[1].temperature('fahrenheit').get('max', None))
+                    f_temp_c = int(one_call.forecast_daily[1].temperature('celsius').get('max', None))
+                    print(self.nick + ': The temperature in ' + place + ' is ' + str(temp_f) + '°F (' + str(
+                        temp_c) + '°C) and ' + observation.weather.detailed_status
+                          + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' + one_call.forecast_daily[
+                              1].detailed_status)
+                    await ctx.send('The temperature in ' + place + ' is ' + str(temp_f) + '°F (' + str(
+                        temp_c) + '°C) and ' + observation.weather.detailed_status
+                                   + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' +
+                                   one_call.forecast_daily[1].detailed_status)
+                except Exception as e:
+                    print(e)
+                    print(self.nick + ': Location ' + args + ' not found.')
+                    await ctx.send('Location ' + args + ' not found.')
 
     @commands.cooldown(rate=1, per=float(config['options']['reddit_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -753,16 +789,20 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['time_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def time(self, ctx: commands.Context, *, args):
+    async def time(self, ctx: commands.Context, *, args=None):
         self.config.read(r'keys.ini')
         if self.config['options']['time_enabled'] == 'True':
-            g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
-            place, (lat, lng) = g.geocode(args)
-            tz = g.reverse_timezone((lat, lng))
-            tz_object = timezone(str(tz))
-            newtime = datetime.datetime.now(tz_object)
-            print(self.nick + ': The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
-            await ctx.send('The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
+            if args is None:
+                print(self.nick + ': Please provide a location')
+                await ctx.send('Please provide a location')
+            else:
+                g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
+                place, (lat, lng) = g.geocode(args)
+                tz = g.reverse_timezone((lat, lng))
+                tz_object = timezone(str(tz))
+                newtime = datetime.datetime.now(tz_object)
+                print(self.nick + ': The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
+                await ctx.send('The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
 
     @commands.cooldown(rate=1, per=float(config['options']['exchange_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -787,37 +827,45 @@ class Bot(commands.Bot):
 
     @commands.cooldown(rate=1, per=float(config['options']['math_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def math(self, ctx: commands.Context, *, args):
+    async def math(self, ctx: commands.Context, *, args=None):
         self.config.read(r'keys.ini')
         if self.config['options']['math_enabled'] == 'True':
-            url = 'http://api.mathjs.org/v4/?expr=' + urllib.parse.quote(args)
-            output = requests.get(url)
-            print(self.nick + ': ' + output.text)
-            await ctx.send(output.text)
+            if args is None:
+                print(self.nick + ': Please provide an equation')
+                await ctx.send('Please provide an equation')
+            else:
+                url = 'http://api.mathjs.org/v4/?expr=' + urllib.parse.quote(args)
+                output = requests.get(url)
+                print(self.nick + ': ' + output.text)
+                await ctx.send(output.text)
 
     @commands.cooldown(rate=1, per=float(config['options']['imdb_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
-    async def imdb(self, ctx: commands.Context, *, args):
+    async def imdb(self, ctx: commands.Context, *, args=None):
         self.config.read(r'keys.ini')
         if self.config['options']['imdb_enabled'] == 'True':
-            movie = ''
-            for x in range(0, 10):
-                try:
-                    movies = self.ia.search_movie(args)
-                    movie = movies[0]
-                    break
-                except IndexError as e:
-                    print(e)
-            if movie != '':
-                # print(movie)
-                movie_id = movie.movieID
-                # print(movie_id)
-                movie_info = self.ia.get_movie(movie_id)
-                # print(movie_info.get('plot')[0])
-                return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' \
-                    + movie_info.get('plot')[0]
-                print(self.nick + ': ' + return_string)
-                await ctx.send(return_string[:500])
+            if args is None:
+                print(self.nick + ': Please provide a Movie, Show, or Game')
+                await ctx.send('Please provide a Movie, Show, or Game')
+            else:
+                movie = ''
+                for x in range(0, 10):
+                    try:
+                        movies = self.ia.search_movie(args)
+                        movie = movies[0]
+                        break
+                    except IndexError as e:
+                        print(e)
+                if movie != '':
+                    # print(movie)
+                    movie_id = movie.movieID
+                    # print(movie_id)
+                    movie_info = self.ia.get_movie(movie_id)
+                    # print(movie_info.get('plot')[0])
+                    return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' \
+                        + movie_info.get('plot')[0]
+                    print(self.nick + ': ' + return_string)
+                    await ctx.send(return_string[:500])
 
     @commands.cooldown(rate=1, per=float(config['options']['pokemon_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
