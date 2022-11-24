@@ -308,9 +308,9 @@ class Bot(commands.Bot):
     async def event_command_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             print('[bold red]' + str(error) + '[/]')
-            print(self.nick + ': This command is on cooldown, you can use it in ' +
+            print(self.nick + ': @' + ctx.message.author.name + ' This command is on cooldown, you can use it in ' +
                   str(round(error.retry_after, 2)) + ' seconds')
-            await ctx.send('This command is on cooldown, you can use it in ' +
+            await ctx.send('@' + ctx.message.author.name + ' This command is on cooldown, you can use it in ' +
                            str(round(error.retry_after, 2)) + ' seconds')
         elif isinstance(error, commands.CommandNotFound):
             print('[bold red]' + error.args[0] + '[/]')
@@ -588,6 +588,11 @@ class Bot(commands.Bot):
                 except openai.error.OpenAIError as e:
                     print(self.nick + ': ' + e.error.message)
                     await ctx.send(e.error.message)
+                    # # # This is super dirty and raises a runtime error
+                    for item in ctx.command._cooldowns[0]._cache:
+                        if item[1] == ctx.message.author.id:
+                            ctx.command._cooldowns[0]._cache.pop(item)
+                    # # # Don't ever do this ^
 
     @commands.cooldown(rate=1, per=float(config['options']['define_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -603,10 +608,12 @@ class Bot(commands.Bot):
                 url = "https://od-api.oxforddictionaries.com:443/api/v2/entries/" + language + "/" + word.lower()
                 headers = {"app_id": self.oxford_app_id, "app_key": self.oxford_api_key}
                 r = requests.get(url, headers=headers).json()
-                definition = r['results'][0]['lexicalEntries'][0]['entries'][0]['senses'][0]['definitions'][0].capitalize()
+                definition = r['results'][0]['lexicalEntries'][0]['entries'][0]['senses'][0]['definitions'][0]\
+                    .capitalize()
                 word = r['results'][0]['word'].capitalize()
                 category = r['results'][0]['lexicalEntries'][0]['lexicalCategory']['text']
-                pronunciation = r['results'][0]['lexicalEntries'][0]['entries'][0]['pronunciations'][0]['phoneticSpelling']
+                pronunciation =\
+                    r['results'][0]['lexicalEntries'][0]['entries'][0]['pronunciations'][0]['phoneticSpelling']
                 out = word + ' - ' + category + ' - ' + pronunciation + ': ' + definition
                 print(self.nick + ': ' + out)
                 await ctx.send(out)
@@ -709,12 +716,12 @@ class Bot(commands.Bot):
                     temp_c = int(observation.weather.temp['temp'] - 273.15)
                     f_temp_f = int(one_call.forecast_daily[1].temperature('fahrenheit').get('max', None))
                     f_temp_c = int(one_call.forecast_daily[1].temperature('celsius').get('max', None))
-                    print(self.nick + ': The temperature in ' + place + ' is ' + str(temp_f) + '°F (' + str(
-                        temp_c) + '°C) and ' + observation.weather.detailed_status
-                          + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' + one_call.forecast_daily[
-                              1].detailed_status)
-                    await ctx.send('The temperature in ' + place + ' is ' + str(temp_f) + '°F (' + str(
-                        temp_c) + '°C) and ' + observation.weather.detailed_status
+                    print(self.nick + ': The temperature in ' + place + ' is ' + str(temp_f) + '°F (' +
+                          str(temp_c) + '°C) and ' + observation.weather.detailed_status
+                          + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' +
+                          one_call.forecast_daily[1].detailed_status)
+                    await ctx.send('The temperature in ' + place + ' is ' + str(temp_f) + '°F (' + str(temp_c) +
+                                   '°C) and ' + observation.weather.detailed_status
                                    + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' +
                                    one_call.forecast_daily[1].detailed_status)
                 except Exception as e:
