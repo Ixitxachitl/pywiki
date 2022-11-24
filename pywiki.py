@@ -588,7 +588,7 @@ class Bot(commands.Bot):
                 except openai.error.OpenAIError as e:
                     print(self.nick + ': ' + e.error.message)
                     await ctx.send(e.error.message)
-                    # # # This is super dirty and raises a runtime error
+                    # # # This is super dirty
                     for item in ctx.command._cooldowns[0]._cache:
                         if item[1] == ctx.message.author.id:
                             ctx.command._cooldowns[0]._cache.update({item: (0, 0)})
