@@ -745,6 +745,7 @@ class Bot(commands.Bot):
             output += '!pinball '
         if self.config['options']['trivia_enabled'] == 'True':
             output += '!trivia '
+        if self.config['options']['leaderboard_enabled'] == 'True':
             output += '!leaderboard '
 
         print(self.nick + ': ' + output)
@@ -956,7 +957,7 @@ class Bot(commands.Bot):
     @commands.command()
     async def leaderboard(self, ctx: commands.Context):
         self.config.read(r'keys.ini')
-        if self.config['options']['trivia_enabled'] == 'True':
+        if self.config['options']['leaderboard_enabled'] == 'True':
             with open('winners.json',  encoding='utf8') as infile:
                 winner_list = json.load(infile)
             winner_list = sorted(winner_list.items(), key=lambda item: item[1])
