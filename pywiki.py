@@ -789,7 +789,6 @@ class Bot(commands.Bot):
             else:
                 g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
                 place = g.geocode(args)
-                print()
                 if place is not None:
                     lat = place.latitude
                     lng = place.longitude
