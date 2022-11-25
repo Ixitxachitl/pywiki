@@ -259,7 +259,7 @@ class Bot(commands.Bot):
             if not fast:
                 await asyncio.sleep(2)
             winners = 'Winners: '
-            with open('winners.json',  encoding='utf8') as infile:
+            with open('winners.json', encoding='utf8') as infile:
                 winner_list = json.load(infile)
             for key in self.trivia_guesses[channel.name]:
                 if self.trivia_guesses[channel.name][key] == correct_answer:
@@ -616,11 +616,11 @@ class Bot(commands.Bot):
                 r = requests.get(url, headers=headers).json()
                 # print(json.dumps(r, indent=4, sort_keys=True))
                 if 'results' in r:
-                    definition = r['results'][0]['lexicalEntries'][0]['entries'][0]['senses'][0]['definitions'][0]\
+                    definition = r['results'][0]['lexicalEntries'][0]['entries'][0]['senses'][0]['definitions'][0] \
                         .capitalize()
                     word = r['results'][0]['word'].capitalize()
                     category = r['results'][0]['lexicalEntries'][0]['lexicalCategory']['text']
-                    pronunciation =\
+                    pronunciation = \
                         r['results'][0]['lexicalEntries'][0]['entries'][0]['pronunciations'][0]['phoneticSpelling']
                     out = word + ' - ' + category + ' - ' + pronunciation + ': ' + definition
                 else:
@@ -861,7 +861,7 @@ class Bot(commands.Bot):
                     movie_info = self.ia.get_movie(movie_id)
                     # print(movie_info.get('plot')[0])
                     return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' \
-                        + movie_info.get('plot')[0]
+                                    + movie_info.get('plot')[0]
                     print(self.nick + ': ' + return_string)
                     await ctx.send(return_string[:500])
 
@@ -940,6 +940,9 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + output)
                 await ctx.send(output)
             else:
+                for item in machines['machines']:
+                    if item['ipdb_link'] is None:
+                        del item
                 machine = random.choice(machines['machines'])
                 print(self.nick + ': ' + machine['name'] + ': ' + machine['ipdb_link'])
                 await ctx.send(machine['name'] + ': ' + machine['ipdb_link'])
@@ -989,7 +992,7 @@ class Bot(commands.Bot):
             if not fast:
                 await asyncio.sleep(2)
             winners = 'Winners: '
-            with open('winners.json',  encoding='utf8') as infile:
+            with open('winners.json', encoding='utf8') as infile:
                 winner_list = json.load(infile)
             for key in self.trivia_guesses[ctx.channel.name]:
                 if self.trivia_guesses[ctx.channel.name][key] == correct_answer:
@@ -1012,7 +1015,7 @@ class Bot(commands.Bot):
     async def leaderboard(self, ctx: commands.Context):
         self.config.read(r'keys.ini')
         if self.config['options']['leaderboard_enabled'] == 'True':
-            with open('winners.json',  encoding='utf8') as infile:
+            with open('winners.json', encoding='utf8') as infile:
                 winner_list = json.load(infile)
             winner_list = sorted(winner_list.items(), key=lambda item: item[1])
             winner_list.reverse()
@@ -1090,8 +1093,8 @@ class Bot(commands.Bot):
             title = post['data']['title']
             output = post['data']['selftext']
             if (len(output) < 100 and not
-            re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
-                       output)):
+                    re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
+                               output)):
                 if (title.endswith('?') or
                         title.endswith('.') or
                         title.endswith('…') or
