@@ -198,11 +198,10 @@ class Bot(commands.Bot):
             while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
                 response.choices[0].text = response.choices[0].text[1:]
 
-            try:
+            if hasattr(response, 'choices'):
                 print(self.nick + ': ' + response.choices[0].text.strip())
                 await channel.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
-            except AttributeError as e:
-                print(e)
+            else:
                 print(self.nick + ': ' + response)
                 await channel.send(response)
         elif event_id == 'Image Generator':
@@ -564,13 +563,12 @@ class Bot(commands.Bot):
             else:
                 response = self.ai_complete(self, args)
 
-                try:
+                if hasattr(response, 'choices'):
                     while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
                         response.choices[0].text = response.choices[0].text[1:]
                     print(self.nick + ': ' + response.choices[0].text.strip())
                     await ctx.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
-                except AttributeError as e:
-                    print(str(e))
+                else:
                     print(self.nick + ': ' + response)
                     await ctx.send(response)
 
@@ -1076,16 +1074,18 @@ class Bot(commands.Bot):
     def ai_complete(self, message):
         self.config.read(r'keys.ini')
         moderate_input = openai.Moderation.create(input=message, model='text-moderation-latest')
-        print(json.dumps(moderate_input, indent=4, sort_keys=True))
+        # print(json.dumps(moderate_input, indent=4, sort_keys=True))
+        print('Input Flagged: ' + str(moderate_input.results[0]['flagged']))
         if not moderate_input.results[0]['flagged']:
             completion = openai.Completion.create(temperature=float(self.config['options']['temperature']),
                                                   max_tokens=int(self.config['options']['tokens']),
                                                   engine=self.config['options']['ai_engine'],
                                                   prompt=message)
-            print(json.dumps(completion, indent=4, sort_keys=True))
+            # print(json.dumps(completion, indent=4, sort_keys=True))
+            print('Response: ' + completion.choices[0].text.strip())
             moderation = openai.Moderation.create(input=completion.choices[0].text, model='text-moderation-latest')
-            print(json.dumps(moderation, indent=4, sort_keys=True))
-
+            # print(json.dumps(moderation, indent=4, sort_keys=True))
+            print('Output Flagged: ' + str(moderation.results[0]['flagged']))
             if not moderation.results[0]['flagged']:
                 return completion
             else:
