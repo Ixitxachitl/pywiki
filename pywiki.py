@@ -614,13 +614,17 @@ class Bot(commands.Bot):
                 url = "https://od-api.oxforddictionaries.com:443/api/v2/entries/" + language + "/" + word.lower()
                 headers = {"app_id": self.oxford_app_id, "app_key": self.oxford_api_key}
                 r = requests.get(url, headers=headers).json()
-                definition = r['results'][0]['lexicalEntries'][0]['entries'][0]['senses'][0]['definitions'][0]\
-                    .capitalize()
-                word = r['results'][0]['word'].capitalize()
-                category = r['results'][0]['lexicalEntries'][0]['lexicalCategory']['text']
-                pronunciation =\
-                    r['results'][0]['lexicalEntries'][0]['entries'][0]['pronunciations'][0]['phoneticSpelling']
-                out = word + ' - ' + category + ' - ' + pronunciation + ': ' + definition
+                # print(json.dumps(r, indent=4, sort_keys=True))
+                if 'results' in r:
+                    definition = r['results'][0]['lexicalEntries'][0]['entries'][0]['senses'][0]['definitions'][0]\
+                        .capitalize()
+                    word = r['results'][0]['word'].capitalize()
+                    category = r['results'][0]['lexicalEntries'][0]['lexicalCategory']['text']
+                    pronunciation =\
+                        r['results'][0]['lexicalEntries'][0]['entries'][0]['pronunciations'][0]['phoneticSpelling']
+                    out = word + ' - ' + category + ' - ' + pronunciation + ': ' + definition
+                else:
+                    out = r['error']
                 print(self.nick + ': ' + out)
                 await ctx.send(out)
 
@@ -638,10 +642,13 @@ class Bot(commands.Bot):
                 url = "https://od-api.oxforddictionaries.com:443/api/v2/entries/" + language + "/" + word.lower()
                 headers = {"app_id": self.oxford_app_id, "app_key": self.oxford_api_key}
                 r = requests.get(url, headers=headers).json()
-                etymology = r['results'][0]['lexicalEntries'][0]['entries'][0]['etymologies'][0].capitalize()
-                word = r['results'][0]['word'].capitalize()
+                if 'results' in r:
+                    etymology = r['results'][0]['lexicalEntries'][0]['entries'][0]['etymologies'][0].capitalize()
+                    word = r['results'][0]['word'].capitalize()
 
-                out = word + ': ' + etymology
+                    out = word + ': ' + etymology
+                else:
+                    out = r['error']
                 print(self.nick + ': ' + out)
                 await ctx.send(out)
 
