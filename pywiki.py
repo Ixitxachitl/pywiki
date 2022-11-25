@@ -691,54 +691,25 @@ class Bot(commands.Bot):
             else:
                 owm = OWM(self.config['keys']['owm_api_key'])
                 mgr = owm.weather_manager()
-                try:
+                g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
+                place = g.geocode(args)
+                if place is not None:
                     # F = 1.8(K - 273) + 32
                     # C = K – 273.15
-                    g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
-                    observation = mgr.weather_at_place(args)
-                    one_call = mgr.one_call(lat=observation.location.lat, lon=observation.location.lon)
-                    place_object = g.reverse((observation.location.lat, observation.location.lon))
-                    # print(json.dumps(place_object.raw, indent=4, sort_keys=True))
-
-                    city = ''
-                    state = ''
-                    country = ''
-                    plus_code = ''
-
-                    for item in place_object.raw['address_components']:
-                        if 'locality' in item['types']:
-                            city = item['long_name']
-                        if 'administrative_area_level_1' in item['types']:
-                            state = item['short_name']
-                        if 'country' in item['types']:
-                            country = item['short_name']
-                        if 'plus_code' in item['types']:
-                            plus_code = item['short_name']
-
-                    place = ''
-                    if city != '':
-                        place += city + ', '
-                    if state != '':
-                        place += state + ', '
-                    if country != '':
-                        place += country
-                    if place == '':
-                        place += plus_code
-
-                    temp_f = int(1.8 * (observation.weather.temp['temp'] - 273) + 32)
-                    temp_c = int(observation.weather.temp['temp'] - 273.15)
+                    one_call = mgr.one_call(lat=place.latitude, lon=place.longitude)
+                    temp_f = int(one_call.current.temperature('fahrenheit').get('temp', None))
+                    temp_c = int((one_call.current.temperature('celsius').get('temp', None)))
                     f_temp_f = int(one_call.forecast_daily[1].temperature('fahrenheit').get('max', None))
                     f_temp_c = int(one_call.forecast_daily[1].temperature('celsius').get('max', None))
-                    print(self.nick + ': The temperature in ' + place + ' is ' + str(temp_f) + '°F (' +
-                          str(temp_c) + '°C) and ' + observation.weather.detailed_status
+                    print(self.nick + ': The temperature in ' + place.address + ' is ' + str(temp_f) + '°F (' +
+                          str(temp_c) + '°C) and ' + one_call.current.detailed_status
                           + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' +
                           one_call.forecast_daily[1].detailed_status)
-                    await ctx.send('The temperature in ' + place + ' is ' + str(temp_f) + '°F (' + str(temp_c) +
-                                   '°C) and ' + observation.weather.detailed_status
+                    await ctx.send('The temperature in ' + place.address + ' is ' + str(temp_f) + '°F (' + str(temp_c) +
+                                   '°C) and ' + one_call.current.detailed_status
                                    + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' +
                                    one_call.forecast_daily[1].detailed_status)
-                except Exception as e:
-                    print(e)
+                else:
                     print(self.nick + ': Location ' + args + ' not found.')
                     await ctx.send('Location ' + args + ' not found.')
 
