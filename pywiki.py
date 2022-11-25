@@ -224,6 +224,11 @@ class Bot(commands.Bot):
                 self.trivia_guesses[channel.name].clear()
             else:
                 self.trivia_guesses.update({channel.name: {}})
+            fast = False
+            for chatter in channel.chatters:
+                if chatter.name == self.nick:
+                    if chatter.is_mod or chatter.is_vip:
+                        fast = True
             url = 'https://opentdb.com/api.php?amount=1&type=multiple'
             trivia_object = requests.get(url).json()
             # print(json.dumps(trivia_object, indent=4, sort_keys=True))
@@ -236,7 +241,8 @@ class Bot(commands.Bot):
             correct_answer = ''
             print(self.nick + ': ' + unescape(trivia_object['results'][0]['question']))
             await channel.send(unescape(trivia_object['results'][0]['question']))
-            await asyncio.sleep(0)
+            if not fast:
+                await asyncio.sleep(2)
             for answer in answers:
                 if answer == trivia_object['results'][0]['correct_answer']:
                     correct_answer = index2[number]
@@ -244,13 +250,15 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + unescape(answer))
                 await channel.send(unescape(answer))
                 number += 1
-                await asyncio.sleep(0)
+                if not fast:
+                    await asyncio.sleep(2)
             await asyncio.sleep(30)
             print(self.nick + ': ' + 'The correct answer was (' + correct_answer.upper() + ') ' +
                   unescape(trivia_object['results'][0]['correct_answer']))
             await channel.send('The correct answer was (' + correct_answer.upper() + ') ' +
                                unescape(trivia_object['results'][0]['correct_answer']))
-            await asyncio.sleep(0)
+            if not fast:
+                await asyncio.sleep(2)
             winners = 'Winners: '
             with open('winners.json',  encoding='utf8') as infile:
                 winner_list = json.load(infile)
@@ -962,6 +970,11 @@ class Bot(commands.Bot):
                 self.trivia_guesses[ctx.channel.name].clear()
             else:
                 self.trivia_guesses.update({ctx.channel.name: {}})
+            fast = False
+            for chatter in ctx.chatters:
+                if chatter.name == self.nick:
+                    if chatter.is_mod or chatter.is_vip:
+                        fast = True
             url = 'https://opentdb.com/api.php?amount=1&type=multiple'
             trivia_object = requests.get(url).json()
             # print(json.dumps(trivia_object, indent=4, sort_keys=True))
@@ -974,7 +987,8 @@ class Bot(commands.Bot):
             correct_answer = ''
             print(self.nick + ': ' + unescape(trivia_object['results'][0]['question']))
             await ctx.send(unescape(trivia_object['results'][0]['question']))
-            await asyncio.sleep(2)
+            if not fast:
+                await asyncio.sleep(2)
             for answer in answers:
                 if answer == trivia_object['results'][0]['correct_answer']:
                     correct_answer = index2[number]
@@ -982,13 +996,15 @@ class Bot(commands.Bot):
                 print(self.nick + ': ' + unescape(answer))
                 await ctx.send(unescape(answer))
                 number += 1
-                await asyncio.sleep(2)
-            await asyncio.sleep(28)
+                if not fast:
+                    await asyncio.sleep(2)
+            await asyncio.sleep(30)
             print(self.nick + ': ' + 'The correct answer was (' + correct_answer.upper() + ') ' +
                   unescape(trivia_object['results'][0]['correct_answer']))
             await ctx.send('The correct answer was (' + correct_answer.upper() + ') ' +
                            unescape(trivia_object['results'][0]['correct_answer']))
-            await asyncio.sleep(2)
+            if not fast:
+                await asyncio.sleep(2)
             winners = 'Winners: '
             with open('winners.json',  encoding='utf8') as infile:
                 winner_list = json.load(infile)
