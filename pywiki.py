@@ -817,12 +817,19 @@ class Bot(commands.Bot):
                 await ctx.send('Please provide a location')
             else:
                 g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
-                place, (lat, lng) = g.geocode(args)
-                tz = g.reverse_timezone((lat, lng))
-                tz_object = timezone(str(tz))
-                newtime = datetime.datetime.now(tz_object)
-                print(self.nick + ': The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
-                await ctx.send('The current time in ' + place + ' is ' + newtime.strftime('%#I:%M %p'))
+                place = g.geocode(args)
+                print()
+                if place is not None:
+                    lat = place.latitude
+                    lng = place.longitude
+                    tz = g.reverse_timezone((lat, lng))
+                    tz_object = timezone(str(tz))
+                    newtime = datetime.datetime.now(tz_object)
+                    print(self.nick + ': The current time in ' + place.address + ' is ' + newtime.strftime('%#I:%M %p'))
+                    await ctx.send('The current time in ' + place.address + ' is ' + newtime.strftime('%#I:%M %p'))
+                else:
+                    print(self.nick + ': Place \"' + args + '\" not found')
+                    await ctx.send('Place \"' + args + '\" not found')
 
     @commands.cooldown(rate=1, per=float(config['options']['exchange_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
