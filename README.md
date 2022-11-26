@@ -17,9 +17,10 @@ Requirements:
 - dateutil
 - Cinemagoer
 - BeautifulSoup
-- pyshorteners
 - FuzzyWuzzy
 - rich
+- stability_sdk
+- imgur_python
 - maybe more?...
 
 You'll need keys:
