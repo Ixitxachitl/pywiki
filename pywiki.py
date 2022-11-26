@@ -3,7 +3,9 @@ import atexit
 import configparser
 import ctypes
 import datetime
+import io
 import json
+import os
 import queue
 import random
 import re
@@ -11,15 +13,16 @@ import sys
 import threading
 import urllib.parse
 from html import unescape
+from os import path
 from pprint import pprint
 
 import openai
 import py2snes
 import pycountry
-import pyshorteners
 import pyttsx3
 import requests
 import wikipedia
+from PIL import Image
 from bs4 import BeautifulSoup
 from dateutil.relativedelta import relativedelta
 from deep_translator import GoogleTranslator
@@ -32,6 +35,9 @@ from pytz import timezone
 from rich import print
 from twitchio.ext import commands
 from twitchio.ext import pubsub
+from stability_sdk import client
+import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
+from imgur_python import Imgur
 
 
 class Bot(commands.Bot):
@@ -65,6 +71,19 @@ class Bot(commands.Bot):
 
         self.oxford_app_id = self.config['keys']['oxford_application_id']
         self.oxford_api_key = self.config['keys']['oxford_api_key']
+
+        os.environ['STABILITY_HOST'] = 'grpc.stability.ai:443'
+        os.environ['STABILITY_KEY'] = self.config['keys']['stability_key']
+
+        self.stability_api = client.StabilityInference(
+            key=os.environ['STABILITY_KEY'],  # API Key reference.
+            verbose=True,  # Print debug messages.
+        )
+
+        self.imgur_client = Imgur({'client_id': self.config['keys']['imgur_client_id'],
+                                   'client_secret': self.config['keys']['imgur_client_secret'],
+                                   'access_token': self.config['keys']['imgur_access_token'],
+                                   'refresh_token': self.config['keys']['imgur_refresh_token']})
 
         self.keysig = {
             'c': {
@@ -196,14 +215,16 @@ class Bot(commands.Bot):
                 await channel.send(response)
         elif event_id == 'Image Generator':
             try:
-                image = openai.Image.create(
-                    prompt=event.input,
-                    n=1,
-                    size="512x512"
-                )
-                type_tiny = pyshorteners.Shortener()
-                image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
-                await channel.send(image_url)
+                image = openai.Image.create(prompt=event.input,
+                                            n=1,
+                                            size="512x512")
+                img_data = requests.get(image['data'][0]['url']).content
+                with open(str(image['created']) + '.png', 'wb') as handler:
+                    handler.write(img_data)
+                response = \
+                    self.imgur_client.image_upload(path.relpath('./' + str(image['created']) + '.png'),
+                                                   str(image['created']), event.input)
+                await channel.send(response['response']['data']['link'])
             except openai.error.OpenAIError as e:
                 await channel.send(e.error.message)
         elif event_id == 'Trivia' and channel.name not in self.trivia_guesses:
@@ -308,22 +329,26 @@ class Bot(commands.Bot):
     async def event_message(self, message):
         if message.echo:
             channel = message.channel
+            bot_chatter = None
             for chatter in channel.chatters:
                 if chatter.name == self.nick:
                     bot_chatter = chatter
                     break
-            start_color = '[bold ' + bot_chatter.color + ']'
-            end_color = '[/]'
-            author = bot_chatter.display_name
-            if bot_chatter.is_subscriber:
-                author = '✨' + author
-            if bot_chatter.is_vip:
-                author = '💎' + author
-            if bot_chatter.is_mod:
-                author = '🗡️' + author
-            if bot_chatter.is_broadcaster:
-                author = '🎥️' + author
-            print(start_color + author + end_color + ': ' + message.content)
+            if bot_chatter is not None:
+                start_color = '[bold ' + bot_chatter.color + ']'
+                end_color = '[/]'
+                author = bot_chatter.display_name
+                if bot_chatter.is_subscriber:
+                    author = '✨' + author
+                if bot_chatter.is_vip:
+                    author = '💎' + author
+                if bot_chatter.is_mod:
+                    author = '🗡️' + author
+                if bot_chatter.is_broadcaster:
+                    author = '🎥️' + author
+                print(start_color + author + end_color + ': ' + message.content)
+            else:
+                print(message.author.name + ': ' + message.content)
             return
 
         if message.author.name == self.nick:
@@ -561,14 +586,16 @@ class Bot(commands.Bot):
                 await ctx.send('Please provide an input text')
             else:
                 try:
-                    image = openai.Image.create(
-                        prompt=args,
-                        n=1,
-                        size="512x512"
-                    )
-                    type_tiny = pyshorteners.Shortener()
-                    image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
-                    await ctx.send(image_url)
+                    image = openai.Image.create(prompt=args,
+                                                n=1,
+                                                size="512x512")
+                    img_data = requests.get(image['data'][0]['url']).content
+                    with open(str(image['created']) + '.png', 'wb') as handler:
+                        handler.write(img_data)
+                    response = \
+                        self.imgur_client.image_upload(path.relpath('./' + str(image['created']) + '.png'),
+                                                       str(image['created']), args)
+                    await ctx.send(response['response']['data']['link'])
                 except openai.error.OpenAIError as e:
                     await ctx.send(e.error.message)
                     # # # This is super dirty
@@ -576,6 +603,39 @@ class Bot(commands.Bot):
                         if item[1] == ctx.message.author.id:
                             ctx.command._cooldowns[0]._cache.update({item: (0, 0)})
                     # # # Don't ever do this ^
+
+    @commands.cooldown(rate=1, per=float(config['options']['dream_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def dream(self, ctx: commands.Context, *, args=None):
+        self.config.read(r'keys.ini')
+        if self.config['options']['dream_enabled'] == 'True':
+            if args is None:
+                await ctx.send('Please provide an input text')
+            else:
+                try:
+                    answers = self.stability_api.generate(prompt=args,
+                                                          sampler=generation.SAMPLER_K_DPM_2_ANCESTRAL,
+                                                          guidance_preset=generation.GUIDANCE_PRESET_FAST_BLUE)
+                    for resp in answers:
+                        for artifact in resp.artifacts:
+                            if artifact.finish_reason == generation.FILTER:
+                                print('Content Filtered, Try Again')
+                                await ctx.send('Content Filtered, Try Again')
+                                for item in ctx.command._cooldowns[0]._cache:
+                                    if item[1] == ctx.message.author.id:
+                                        ctx.command._cooldowns[0]._cache.update({item: (0, 0)})
+                            if artifact.type == generation.ARTIFACT_IMAGE:
+                                img = Image.open(io.BytesIO(artifact.binary))
+                                img.save(str(artifact.seed) + '.png')
+                                response = \
+                                    self.imgur_client.image_upload(path.relpath('./' + str(artifact.seed) + '.png'),
+                                                                   artifact.seed, args)
+                                await ctx.send(response['response']['data']['link'])
+                except Exception as e:
+                    await ctx.send(str(e)[:500])
+                    for item in ctx.command._cooldowns[0]._cache:
+                        if item[1] == ctx.message.author.id:
+                            ctx.command._cooldowns[0]._cache.update({item: (0, 0)})
 
     @commands.cooldown(rate=1, per=float(config['options']['define_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -708,6 +768,8 @@ class Bot(commands.Bot):
             output += '!ai '
         if self.config['options']['imagine_enabled'] == 'True':
             output += '!imagine '
+        if self.config['options']['dream_enabled'] == 'True':
+            output += '!dream '
         if self.config['options']['define_enabled'] == 'True':
             output += '!define '
         if self.config['options']['etymology_enabled'] == 'True':
