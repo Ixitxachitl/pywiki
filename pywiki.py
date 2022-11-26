@@ -72,10 +72,9 @@ class Bot(commands.Bot):
         self.oxford_app_id = self.config['keys']['oxford_application_id']
         self.oxford_api_key = self.config['keys']['oxford_api_key']
 
-        os.environ['STABILITY_HOST'] = 'grpc.stability.ai:443'
-        os.environ['STABILITY_KEY'] = self.config['keys']['stability_key']
-
         if self.config['options']['dream_enabled'] == 'True':
+            os.environ['STABILITY_HOST'] = 'grpc.stability.ai:443'
+            os.environ['STABILITY_KEY'] = self.config['keys']['stability_key']
             self.stability_api = client.StabilityInference(
                 key=os.environ['STABILITY_KEY'],  # API Key reference.
                 verbose=True,  # Print debug messages.
