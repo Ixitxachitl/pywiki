@@ -75,15 +75,21 @@ class Bot(commands.Bot):
         os.environ['STABILITY_HOST'] = 'grpc.stability.ai:443'
         os.environ['STABILITY_KEY'] = self.config['keys']['stability_key']
 
-        self.stability_api = client.StabilityInference(
-            key=os.environ['STABILITY_KEY'],  # API Key reference.
-            verbose=True,  # Print debug messages.
-        )
+        if self.config['options']['dream_enabled'] == 'True':
+            self.stability_api = client.StabilityInference(
+                key=os.environ['STABILITY_KEY'],  # API Key reference.
+                verbose=True,  # Print debug messages.
+            )
 
         self.imgur_client = Imgur({'client_id': self.config['keys']['imgur_client_id'],
                                    'client_secret': self.config['keys']['imgur_client_secret'],
                                    'access_token': self.config['keys']['imgur_access_token'],
                                    'refresh_token': self.config['keys']['imgur_refresh_token']})
+        '''
+        self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
+        with open('keys.ini', 'w') as configfile:
+            self.config.write(configfile)
+        '''
 
         self.keysig = {
             'c': {
