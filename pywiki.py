@@ -162,35 +162,27 @@ class Bot(commands.Bot):
 
         # # #---EDIT HERE FOR CUSTOM REDEMPTIONS---# # #
         if event_id == 'Eggs':
-            print(self.nick + ': 🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
-                              '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
             await channel.send('🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚'
                                '🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚🥚')
         elif event_id == 'TTS':
             user_input = event.input
-            # print(self.nick + ': ' + user_input)
-            # await channel.send(user_input)
             pyttsx3.speak(user_input)
         elif event_id == "Mushroom":
             if self.snes_connected:
                 await self.snes.PutAddress([(int('0xF50019', 16), [int('0x01', 16)])])
-            print(self.nick + ': 🍄')
             await channel.send('🍄')
         elif event_id == "Cape":
             if self.snes_connected:
                 await self.snes.PutAddress([(int('0xF50019', 16), [int('0x02', 16)])])
-            print(self.nick + ': 🪶')
             await channel.send('🪶')
         elif event_id == "Fire Flower":
             if self.snes_connected:
                 await self.snes.PutAddress([(int('0xF50019', 16), [int('0x03', 16)])])
-            print(self.nick + ': 🌹')
             await channel.send('🌹')
         elif event_id == 'Random Fact':
             fact_url = 'https://uselessfacts.jsph.pl/random.json?language=en'
             fact = requests.get(fact_url).json()
             # print(json.dumps(fact, indent=4, sort_keys=True))
-            print(self.nick + ': ' + fact['text'])
             await channel.send(fact['text'])
         elif event_id == 'AI':
             response = self.ai_complete(self, event.input)
@@ -199,10 +191,8 @@ class Bot(commands.Bot):
                 response.choices[0].text = response.choices[0].text[1:]
 
             if hasattr(response, 'choices'):
-                print(self.nick + ': ' + response.choices[0].text.strip())
                 await channel.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
             else:
-                print(self.nick + ': ' + response)
                 await channel.send(response)
         elif event_id == 'Image Generator':
             try:
@@ -213,10 +203,8 @@ class Bot(commands.Bot):
                 )
                 type_tiny = pyshorteners.Shortener()
                 image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
-                print(self.nick + ': ' + image_url)
                 await channel.send(image_url)
             except openai.error.OpenAIError as e:
-                print(self.nick + ': ' + e.error.message)
                 await channel.send(e.error.message)
         elif event_id == 'Trivia' and channel.name not in self.trivia_guesses:
             if channel.name in self.trivia_guesses.keys():
@@ -238,7 +226,6 @@ class Bot(commands.Bot):
             index2 = ['a', 'b', 'c', 'd']
             number = 0
             correct_answer = ''
-            print(self.nick + ': ' + unescape(trivia_object['results'][0]['question']))
             await channel.send(unescape(trivia_object['results'][0]['question']))
             if not fast:
                 await asyncio.sleep(2)
@@ -246,14 +233,11 @@ class Bot(commands.Bot):
                 if answer == trivia_object['results'][0]['correct_answer']:
                     correct_answer = index2[number]
                 answer = index[number] + ' ' + answer
-                print(self.nick + ': ' + unescape(answer))
                 await channel.send(unescape(answer))
                 number += 1
                 if not fast:
                     await asyncio.sleep(2)
             await asyncio.sleep(30)
-            print(self.nick + ': ' + 'The correct answer was (' + correct_answer.upper() + ') ' +
-                  unescape(trivia_object['results'][0]['correct_answer']))
             await channel.send('The correct answer was (' + correct_answer.upper() + ') ' +
                                unescape(trivia_object['results'][0]['correct_answer']))
             if not fast:
@@ -271,16 +255,13 @@ class Bot(commands.Bot):
                         json.dump(winner_list, outfile)
                     winners += key + ' '
             if winners != 'Winners: ':
-                print(self.nick + ': ' + winners)
                 await channel.send(winners)
             else:
-                print(self.nick + ': Nobody Won')
                 await channel.send('Nobody Won')
             self.trivia_guesses.pop(channel.name)
 
         '''
         elif event_id == 'Echo':
-            print(self.nick + ': ' + event.input)
             await channel.send(event.input)
         '''
         # # #---END EDIT ZONE---# # #
@@ -315,8 +296,6 @@ class Bot(commands.Bot):
     async def event_command_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             print('[bold red]' + str(error) + '[/]')
-            print(self.nick + ': @' + ctx.message.author.name + ' This command is on cooldown, you can use it in ' +
-                  str(round(error.retry_after, 2)) + ' seconds')
             await ctx.send('@' + ctx.message.author.name + ' This command is on cooldown, you can use it in ' +
                            str(round(error.retry_after, 2)) + ' seconds')
         elif isinstance(error, commands.CommandNotFound):
@@ -328,6 +307,23 @@ class Bot(commands.Bot):
 
     async def event_message(self, message):
         if message.echo:
+            channel = message.channel
+            for chatter in channel.chatters:
+                if chatter.name == self.nick:
+                    bot_chatter = chatter
+                    break
+            start_color = '[bold ' + bot_chatter.color + ']'
+            end_color = '[/]'
+            author = bot_chatter.display_name
+            if bot_chatter.is_subscriber:
+                author = '✨' + author
+            if bot_chatter.is_vip:
+                author = '💎' + author
+            if bot_chatter.is_mod:
+                author = '🗡️' + author
+            if bot_chatter.is_broadcaster:
+                author = '🎥️' + author
+            print(start_color + author + end_color + ': ' + message.content)
             return
 
         if message.author.name == self.nick:
@@ -359,8 +355,8 @@ class Bot(commands.Bot):
                 for key in self.config['greetings']:
                     if message.author.name == key:
                         response = self.config['greetings'][key]
-                        print(self.nick + ': ' + response)
                         await message.channel.send(response)
+                        break
 
         if message.channel.name in self.trivia_guesses.keys():
             if message.content.lower() == 'a' or \
@@ -376,7 +372,6 @@ class Bot(commands.Bot):
     async def settitle(self, ctx: commands.Context, *, args=None):
         if ctx.message.author.is_broadcaster or ctx.message.author.is_mod and self.users_channel == ctx.channel.name:
             if args is None:
-                print(self.nick + ': Please provide an input text')
                 await ctx.send('Please provide an input text')
             else:
                 user = await bot.fetch_users([ctx.channel.name])
@@ -387,7 +382,6 @@ class Bot(commands.Bot):
                 data = {'title': args}
                 response = requests.patch(url=url, headers=headers, data=json.dumps(data))
                 print(response)
-                print(self.nick + ': Set title to: ' + args)
                 await ctx.send('Set title to: ' + args)
 
     @commands.command()
@@ -411,7 +405,6 @@ class Bot(commands.Bot):
 
             response = requests.patch(url=url, headers=headers, data=json.dumps(data))
             print(response)
-            print(self.nick + ': Set game to: ' + game[0].name)
             await ctx.send('Set game to: ' + game[0].name)
 
     @commands.cooldown(rate=1, per=float(config['options']['wiki_cooldown']), bucket=commands.Bucket.member)
@@ -420,7 +413,6 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['wiki_enabled'] == 'True':
             if args is None:
-                print(self.nick + ': Please provide an input text')
                 await ctx.send('Please provide an input text')
             else:
                 wikipedia.set_lang("en")
@@ -439,7 +431,6 @@ class Bot(commands.Bot):
                         p = wikipedia.summary(str(e.options[0]), sentences=3, auto_suggest=False)
                     except wikipedia.PageError as e:
                         p = str(e)
-                print(self.nick + ': ' + p)
                 await ctx.send(p.replace('\r', '').replace('\n', '')[:500])
 
     @commands.cooldown(rate=1, per=float(config['options']['uptime_cooldown']), bucket=commands.Bucket.member)
@@ -462,11 +453,9 @@ class Bot(commands.Bot):
                     string += str(time.minutes) + ' minute '
                 elif time.minutes > 1:
                     string += str(time.minutes) + ' minutes '
-                print(self.nick + ': ' + channel[0].display_name + ' has been live for ' + string)
                 await ctx.send(channel[0].display_name + ' has been live for ' + string)
             except Exception as e:
                 print(e)
-                print(self.nick + ': ' + channel[0].display_name + ' is not live')
                 await ctx.send(channel[0].display_name + ' is not live')
 
     @commands.cooldown(rate=1, per=float(config['options']['followage_cooldown']), bucket=commands.Bucket.member)
@@ -501,11 +490,9 @@ class Bot(commands.Bot):
                     string += str(time.hours) + ' hour '
                 elif time.hours > 1:
                     string += str(time.hours) + ' hours '
-                print(self.nick + ': ' + string)
                 await ctx.send(string)
             except Exception as e:
                 print(e)
-                print(self.nick + ': ' + ctx.author.display_name + ' is not following')
                 await ctx.send(ctx.author.display_name + ' is not following')
 
     @commands.cooldown(rate=1, per=float(config['options']['key_cooldown']), bucket=commands.Bucket.member)
@@ -514,7 +501,6 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['key_enabled'] == 'True':
             if args is None:
-                print(self.nick + ': Syntax Error')
                 await ctx.send('Syntax Error')
             else:
                 try:
@@ -535,13 +521,11 @@ class Bot(commands.Bot):
                     if key_index in self.keysig:
                         if command[0].isupper():
                             if 'major' in self.keysig[key_index]:
-                                print(self.nick + ': ' + self.keysig[key_index]['major'])
                                 await ctx.send(self.keysig[key_index]['major'])
                             else:
                                 raise Exception('Syntax Error')
                         else:
                             if 'minor' in self.keysig[key_index]:
-                                print(self.nick + ': ' + self.keysig[key_index]['minor'])
                                 await ctx.send(self.keysig[key_index]['minor'])
                             else:
                                 raise Exception('Syntax Error')
@@ -549,7 +533,6 @@ class Bot(commands.Bot):
                         raise Exception('Syntax Error')
 
                 except Exception as e:
-                    print(self.nick + ': ' + str(e))
                     await ctx.send(str(e))
 
     @commands.cooldown(rate=1, per=float(config['options']['ai_cooldown']), bucket=commands.Bucket.member)
@@ -558,7 +541,6 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['ai_enabled'] == 'True':
             if args is None:
-                print(self.nick + ': Please provide an input text')
                 await ctx.send('Please provide an input text')
             else:
                 response = self.ai_complete(self, args)
@@ -566,10 +548,8 @@ class Bot(commands.Bot):
                 if hasattr(response, 'choices'):
                     while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
                         response.choices[0].text = response.choices[0].text[1:]
-                    print(self.nick + ': ' + response.choices[0].text.strip())
                     await ctx.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
                 else:
-                    print(self.nick + ': ' + response)
                     await ctx.send(response)
 
     @commands.cooldown(rate=1, per=float(config['options']['imagine_cooldown']), bucket=commands.Bucket.member)
@@ -578,7 +558,6 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['imagine_enabled'] == 'True':
             if args is None:
-                print(self.nick + ': Please provide an input text')
                 await ctx.send('Please provide an input text')
             else:
                 try:
@@ -589,10 +568,8 @@ class Bot(commands.Bot):
                     )
                     type_tiny = pyshorteners.Shortener()
                     image_url = type_tiny.tinyurl.short(image['data'][0]['url'])
-                    print(self.nick + ': ' + image_url)
                     await ctx.send(image_url)
                 except openai.error.OpenAIError as e:
-                    print(self.nick + ': ' + e.error.message)
                     await ctx.send(e.error.message)
                     # # # This is super dirty
                     for item in ctx.command._cooldowns[0]._cache:
@@ -606,7 +583,6 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['define_enabled'] == 'True':
             if args is None:
-                print(self.nick + ': Please provide an input text')
                 await ctx.send('Please provide an input text')
             else:
                 language = 'en-us'
@@ -625,7 +601,6 @@ class Bot(commands.Bot):
                     out = word + ' - ' + category + ' - ' + pronunciation + ': ' + definition
                 else:
                     out = r['error']
-                print(self.nick + ': ' + out)
                 await ctx.send(out)
 
     @commands.cooldown(rate=1, per=float(config['options']['etymology_cooldown']), bucket=commands.Bucket.member)
@@ -634,7 +609,6 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['etymology_enabled'] == 'True':
             if args is None:
-                print(self.nick + ': Please provide an input text')
                 await ctx.send('Please provide an input text')
             else:
                 language = 'en-us'
@@ -649,7 +623,6 @@ class Bot(commands.Bot):
                     out = word + ': ' + etymology
                 else:
                     out = r['error']
-                print(self.nick + ': ' + out)
                 await ctx.send(out)
 
     @commands.cooldown(rate=1, per=float(config['options']['translate_cooldown']), bucket=commands.Bucket.member)
@@ -674,10 +647,8 @@ class Bot(commands.Bot):
                 except Exception as e:
                     print(e)
                     response = 'From ' + language_short + ': ' + translated
-                print(self.nick + ': ' + response)
                 await ctx.send(response[:500])
             except Exception as e:
-                print(self.nick + ': ' + str(e.args[0]))
                 await ctx.send(str(e.args[0]))
 
     @commands.cooldown(rate=1, per=float(config['options']['weather_cooldown']), bucket=commands.Bucket.member)
@@ -686,7 +657,6 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['weather_enabled'] == 'True':
             if args is None:
-                print(self.nick + ': Please provide a location')
                 await ctx.send('Please provide a location')
             else:
                 owm = OWM(self.config['keys']['owm_api_key'])
@@ -701,16 +671,11 @@ class Bot(commands.Bot):
                     temp_c = int((one_call.current.temperature('celsius').get('temp', None)))
                     f_temp_f = int(one_call.forecast_daily[1].temperature('fahrenheit').get('max', None))
                     f_temp_c = int(one_call.forecast_daily[1].temperature('celsius').get('max', None))
-                    print(self.nick + ': The temperature in ' + place.address + ' is ' + str(temp_f) + '°F (' +
-                          str(temp_c) + '°C) and ' + one_call.current.detailed_status
-                          + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' +
-                          one_call.forecast_daily[1].detailed_status)
                     await ctx.send('The temperature in ' + place.address + ' is ' + str(temp_f) + '°F (' + str(temp_c) +
                                    '°C) and ' + one_call.current.detailed_status
                                    + ', Tomorrow: ' + str(f_temp_f) + '°F (' + str(f_temp_c) + '°C) and ' +
                                    one_call.forecast_daily[1].detailed_status)
                 else:
-                    print(self.nick + ': Location ' + args + ' not found.')
                     await ctx.send('Location ' + args + ' not found.')
 
     @commands.cooldown(rate=1, per=float(config['options']['reddit_cooldown']), bucket=commands.Bucket.member)
@@ -726,7 +691,6 @@ class Bot(commands.Bot):
                 await asyncio.sleep(0)
             result = q.get()
             if result:
-                print(self.nick + ': ' + joke)
                 await ctx.send(joke)
 
     @commands.command(name='commands')
@@ -775,7 +739,6 @@ class Bot(commands.Bot):
         if self.config['options']['leaderboard_enabled'] == 'True':
             output += '!leaderboard '
 
-        print(self.nick + ': ' + output)
         await ctx.send(output)
 
     @commands.cooldown(rate=1, per=float(config['options']['time_cooldown']), bucket=commands.Bucket.member)
@@ -784,7 +747,6 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['time_enabled'] == 'True':
             if args is None:
-                print(self.nick + ': Please provide a location')
                 await ctx.send('Please provide a location')
             else:
                 g = geocoders.GoogleV3(api_key=self.config['keys']['google_api_key'], domain='maps.googleapis.com')
@@ -795,10 +757,8 @@ class Bot(commands.Bot):
                     tz = g.reverse_timezone((lat, lng))
                     tz_object = timezone(str(tz))
                     newtime = datetime.datetime.now(tz_object)
-                    print(self.nick + ': The current time in ' + place.address + ' is ' + newtime.strftime('%#I:%M %p'))
                     await ctx.send('The current time in ' + place.address + ' is ' + newtime.strftime('%#I:%M %p'))
                 else:
-                    print(self.nick + ': Place \"' + args + '\" not found')
                     await ctx.send('Place \"' + args + '\" not found')
 
     @commands.cooldown(rate=1, per=float(config['options']['exchange_cooldown']), bucket=commands.Bucket.member)
@@ -808,7 +768,6 @@ class Bot(commands.Bot):
         if self.config['options']['exchange_enabled'] == 'True':
             url = 'https://api.exchangerate.host/convert?from=' + cur_from + '&to=' + cur_to + '&amount=' + amount
             data = requests.get(url).json()
-            print(self.nick + ': ' + amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
             await ctx.send(amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
 
     @commands.cooldown(rate=1, per=float(config['options']['fact_cooldown']), bucket=commands.Bucket.member)
@@ -819,7 +778,6 @@ class Bot(commands.Bot):
             url = 'https://uselessfacts.jsph.pl/random.json?language=en'
             fact = requests.get(url).json()
             # print(json.dumps(fact, indent=4, sort_keys=True))
-            print(self.nick + ': ' + fact['text'])
             await ctx.send(fact['text'])
 
     @commands.cooldown(rate=1, per=float(config['options']['math_cooldown']), bucket=commands.Bucket.member)
@@ -828,12 +786,10 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['math_enabled'] == 'True':
             if args is None:
-                print(self.nick + ': Please provide an equation')
                 await ctx.send('Please provide an equation')
             else:
                 url = 'http://api.mathjs.org/v4/?expr=' + urllib.parse.quote(args)
                 output = requests.get(url)
-                print(self.nick + ': ' + output.text)
                 await ctx.send(output.text)
 
     @commands.cooldown(rate=1, per=float(config['options']['imdb_cooldown']), bucket=commands.Bucket.member)
@@ -842,7 +798,6 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['imdb_enabled'] == 'True':
             if args is None:
-                print(self.nick + ': Please provide a Movie, Show, or Game')
                 await ctx.send('Please provide a Movie, Show, or Game')
             else:
                 movie = ''
@@ -859,9 +814,8 @@ class Bot(commands.Bot):
                     # print(movie_id)
                     movie_info = self.ia.get_movie(movie_id)
                     # print(movie_info.get('plot')[0])
-                    return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' \
-                                    + movie_info.get('plot')[0]
-                    print(self.nick + ': ' + return_string)
+                    return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' +\
+                        movie_info.get('plot')[0]
                     await ctx.send(return_string[:500])
 
     @commands.cooldown(rate=1, per=float(config['options']['pokemon_cooldown']), bucket=commands.Bucket.member)
@@ -908,7 +862,6 @@ class Bot(commands.Bot):
             except requests.exceptions.JSONDecodeError as e:
                 print(e)
             output = description + ' ' + flavor_texts[0]
-            print(self.nick + ': ' + output.replace('\r', ' ').replace('\n', ' '))
             await ctx.send(output.replace('\r', ' ').replace('\n', ' ')[:500])
 
     @commands.cooldown(rate=1, per=float(config['options']['pinball_cooldown']), bucket=commands.Bucket.member)
@@ -936,14 +889,12 @@ class Bot(commands.Bot):
                     if ratio > last_ratio and machine['ipdb_link'] != '':
                         last_ratio = ratio
                         output = machine['name'] + ': ' + machine['ipdb_link']
-                print(self.nick + ': ' + output)
                 await ctx.send(output)
             else:
                 for item in machines['machines']:
                     if item['ipdb_link'] is None:
                         del item
                 machine = random.choice(machines['machines'])
-                print(self.nick + ': ' + machine['name'] + ': ' + machine['ipdb_link'])
                 await ctx.send(machine['name'] + ': ' + machine['ipdb_link'])
 
     @commands.cooldown(rate=1, per=float(config['options']['trivia_cooldown']), bucket=commands.Bucket.channel)
@@ -956,7 +907,7 @@ class Bot(commands.Bot):
             else:
                 self.trivia_guesses.update({ctx.channel.name: {}})
             fast = False
-            for chatter in ctx.chatters:
+            for chatter in ctx.channel.chatters:
                 if chatter.name == self.nick:
                     if chatter.is_mod or chatter.is_vip:
                         fast = True
@@ -970,7 +921,6 @@ class Bot(commands.Bot):
             index2 = ['a', 'b', 'c', 'd']
             number = 0
             correct_answer = ''
-            print(self.nick + ': ' + unescape(trivia_object['results'][0]['question']))
             await ctx.send(unescape(trivia_object['results'][0]['question']))
             if not fast:
                 await asyncio.sleep(2)
@@ -978,14 +928,11 @@ class Bot(commands.Bot):
                 if answer == trivia_object['results'][0]['correct_answer']:
                     correct_answer = index2[number]
                 answer = index[number] + ' ' + answer
-                print(self.nick + ': ' + unescape(answer))
                 await ctx.send(unescape(answer))
                 number += 1
                 if not fast:
                     await asyncio.sleep(2)
             await asyncio.sleep(30)
-            print(self.nick + ': ' + 'The correct answer was (' + correct_answer.upper() + ') ' +
-                  unescape(trivia_object['results'][0]['correct_answer']))
             await ctx.send('The correct answer was (' + correct_answer.upper() + ') ' +
                            unescape(trivia_object['results'][0]['correct_answer']))
             if not fast:
@@ -1003,10 +950,8 @@ class Bot(commands.Bot):
                         json.dump(winner_list, outfile)
                     winners += key + ' '
             if winners != 'Winners: ':
-                print(self.nick + ': ' + winners)
                 await ctx.send(winners)
             else:
-                print(self.nick + ': Nobody Won')
                 await ctx.send('Nobody Won')
             self.trivia_guesses.pop(ctx.channel.name)
 
@@ -1027,18 +972,23 @@ class Bot(commands.Bot):
                 top5 += 1
                 if top5 == 5:
                     break
-            print(self.nick + ': ' + output)
             await ctx.send(output)
 
+    @commands.cooldown(rate=1, per=10, bucket=commands.Bucket.member)
     @commands.command()
     async def death(self, ctx: commands.Context):
         if ctx.author.is_mod or ctx.author.is_broadcaster:
             deaths = random.randint(1, 1000000)
             broadcaster = await bot.fetch_users([ctx.channel.name])
-            print(self.nick + ': ' + broadcaster[0].display_name + ' has died ' + str(deaths) +
-                  ' time/s or something, we\'re not really counting.')
             await ctx.send(broadcaster[0].display_name + ' has died ' + str(deaths) +
                            ' time/s or something, we\'re not really counting.')
+
+    @commands.cooldown(rate=1, per=10, bucket=commands.Bucket.member)
+    @commands.command()
+    async def snork(self, ctx: commands.Context):
+        snoot = random.choice(list(ctx.channel.chatters))
+        snoot = await bot.fetch_users([snoot.name])
+        await ctx.send(ctx.message.author.display_name + ' snorked ' + snoot[0].display_name)
 
     @commands.command()
     async def clear(self, ctx: commands.Context):
