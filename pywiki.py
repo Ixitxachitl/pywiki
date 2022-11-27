@@ -414,10 +414,13 @@ class Bot(commands.Bot):
                            'Content-Type': 'application/json'}
                 data = {'title': args}
                 response = requests.patch(url=url, headers=headers, data=json.dumps(data))
-                print(response)
+                # print(response.status_code)
                 # await user[0].modify_stream(token=self.users_oauth_token, title=args) #proper way to do it doesn't
                 #    find client id?
-                await ctx.send('Set title to: ' + args)
+                if response.status_code == 204:
+                    await ctx.send('Set title to: ' + args)
+                else:
+                    await ctx.send('There was an error setting the title: ' + str(response.status_code))
 
     @commands.command()
     async def setgame(self, ctx: commands.Context, *, args=None):
@@ -439,8 +442,10 @@ class Bot(commands.Bot):
                        'Content-Type': 'application/json'}
 
             response = requests.patch(url=url, headers=headers, data=json.dumps(data))
-            print(response)
-            await ctx.send('Set game to: ' + game[0].name)
+            if response.status_code == 204:
+                await ctx.send('Set game to: ' + game[0].name)
+            else:
+                await ctx.send('There was an error setting the game: ' + str(response.status_code))
 
     @commands.cooldown(rate=1, per=float(config['options']['wiki_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
