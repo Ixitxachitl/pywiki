@@ -11,6 +11,7 @@ import random
 import re
 import sys
 import threading
+import time
 import urllib.parse
 from html import unescape
 from os import path
@@ -613,9 +614,7 @@ class Bot(commands.Bot):
                 except openai.error.OpenAIError as e:
                     await ctx.send(e.error.message)
                     # # # This is super dirty
-                    for item in ctx.command._cooldowns[0]._cache:
-                        if item[1] == ctx.message.author.id:
-                            ctx.command._cooldowns[0]._cache.update({item: (0, 0)})
+                    ctx.command._cooldowns[0]._cache.update({(ctx.channel.name, ctx.message.author.id): (1, 0)})
                     # # # Don't ever do this ^
 
     @commands.cooldown(rate=1, per=float(config['options']['dream_cooldown']), bucket=commands.Bucket.member)
@@ -642,9 +641,8 @@ class Bot(commands.Bot):
                             if artifact.finish_reason == generation.FILTER:
                                 print('Content Filtered, Try Again')
                                 await ctx.send('Content Filtered, Try Again')
-                                for item in ctx.command._cooldowns[0]._cache:
-                                    if item[1] == ctx.message.author.id:
-                                        ctx.command._cooldowns[0]._cache.update({item: (0, 0)})
+                                ctx.command._cooldowns[0]._cache.update(
+                                    {(ctx.channel.name, ctx.message.author.id): (1, 0)})
                             if artifact.type == generation.ARTIFACT_IMAGE:
                                 img = Image.open(io.BytesIO(artifact.binary))
                                 img.save(str(artifact.seed) + '.png')
@@ -654,9 +652,7 @@ class Bot(commands.Bot):
                                 await ctx.send(response['response']['data']['link'])
                 except Exception as e:
                     await ctx.send('Communication Error, Try Again')
-                    for item in ctx.command._cooldowns[0]._cache:
-                        if item[1] == ctx.message.author.id:
-                            ctx.command._cooldowns[0]._cache.update({item: (0, 0)})
+                    ctx.command._cooldowns[0]._cache.update({(ctx.channel.name, ctx.message.author.id): (1, 0)})
 
     @commands.cooldown(rate=1, per=float(config['options']['define_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -683,6 +679,24 @@ class Bot(commands.Bot):
                 else:
                     out = r['error']
                 await ctx.send(out)
+
+    @commands.cooldown(rate=1, per=float(config['options']['udefine_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def udefine(self, ctx: commands.Context, *, args=None):
+        self.config.read(r'keys.ini')
+        if self.config['options']['udefine_enabled'] == 'True':
+            if args is None:
+                await ctx.send('Please provide an input text')
+            else:
+                url = 'https://api.urbandictionary.com/v0/define?term=' + args
+                r = requests.get(url).json()
+                try:
+                    word = r['list'][0]['word']
+                    definition = r['list'][0]['definition']
+                    response = word.capitalize() + ' - ' + re.sub(r"[\[\]]", "", definition)
+                    await ctx.send(response[:500])
+                except IndexError as e:
+                    await ctx.send('Word ' + args + ' not found')
 
     @commands.cooldown(rate=1, per=float(config['options']['etymology_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -795,6 +809,8 @@ class Bot(commands.Bot):
             output += '!define '
         if self.config['options']['etymology_enabled'] == 'True':
             output += '!etymology '
+        if self.config['options']['udefine_enabled'] == 'True':
+            output += '!udefine '
         if self.config['options']['translate_enabled'] == 'True':
             output += '!translate '
         if self.config['options']['weather_enabled'] == 'True':
