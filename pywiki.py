@@ -609,7 +609,6 @@ class Bot(commands.Bot):
                     response = \
                         self.imgur_client.image_upload(path.relpath('./' + str(image['created']) + '.png'),
                                                        str(image['created']), args)
-                    print(response['status'])
                     await ctx.send(response['response']['data']['link'])
                 except openai.error.OpenAIError as e:
                     await ctx.send(e.error.message)
