@@ -385,7 +385,7 @@ class Bot(commands.Bot):
             if self.config['options']['welcome_enabled'] == 'True':
 
                 for key in self.config['greetings']:
-                    if message.author.name == key:
+                    if message.author.name == key.lower():
                         response = self.config['greetings'][key]
                         await message.channel.send(response)
                         break
