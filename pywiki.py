@@ -11,7 +11,6 @@ import random
 import re
 import sys
 import threading
-import time
 import urllib.parse
 from html import unescape
 from os import path
@@ -476,16 +475,16 @@ class Bot(commands.Bot):
             try:
                 started_at = stream[0].started_at.strftime('%Y-%m-%dT%H:%M:%SZ')
                 con_started_at = datetime.datetime.strptime(started_at, '%Y-%m-%dT%H:%M:%SZ')
-                time = relativedelta(datetime.datetime.utcnow(), con_started_at)
+                uptime = relativedelta(datetime.datetime.utcnow(), con_started_at)
                 string = ''
-                if time.hours == 1:
-                    string += str(time.hours) + ' hour '
-                elif time.hours > 1:
-                    string += str(time.hours) + ' hours '
-                if time.minutes == 1:
-                    string += str(time.minutes) + ' minute '
-                elif time.minutes > 1:
-                    string += str(time.minutes) + ' minutes '
+                if uptime.hours == 1:
+                    string += str(uptime.hours) + ' hour '
+                elif uptime.hours > 1:
+                    string += str(uptime.hours) + ' hours '
+                if uptime.minutes == 1:
+                    string += str(uptime.minutes) + ' minute '
+                elif uptime.minutes > 1:
+                    string += str(uptime.minutes) + ' minutes '
                 await ctx.send(channel[0].display_name + ' has been live for ' + string)
             except Exception as e:
                 print(e)
@@ -505,24 +504,24 @@ class Bot(commands.Bot):
             try:
                 f = follow.followed_at.strftime('%Y-%m-%dT%H:%M:%SZ')
                 con_followed_at = datetime.datetime.strptime(f, '%Y-%m-%dT%H:%M:%SZ')
-                time = relativedelta(datetime.datetime.utcnow(), con_followed_at)
+                follow_time = relativedelta(datetime.datetime.utcnow(), con_followed_at)
                 string = ctx.author.display_name + ' has been following for '
-                if time.years == 1:
-                    string += str(time.years) + ' year '
-                elif time.years > 1:
-                    string += str(time.years) + ' years '
-                if time.months == 1:
-                    string += str(time.months) + ' month '
-                elif time.months > 1:
-                    string += str(time.months) + ' months '
-                if time.days == 1:
-                    string += str(time.days) + ' day '
-                elif time.days > 1:
-                    string += str(time.days) + ' days '
-                if time.hours == 1:
-                    string += str(time.hours) + ' hour '
-                elif time.hours > 1:
-                    string += str(time.hours) + ' hours '
+                if follow_time.years == 1:
+                    string += str(follow_time.years) + ' year '
+                elif follow_time.years > 1:
+                    string += str(follow_time.years) + ' years '
+                if follow_time.months == 1:
+                    string += str(follow_time.months) + ' month '
+                elif follow_time.months > 1:
+                    string += str(follow_time.months) + ' months '
+                if follow_time.days == 1:
+                    string += str(follow_time.days) + ' day '
+                elif follow_time.days > 1:
+                    string += str(follow_time.days) + ' days '
+                if follow_time.hours == 1:
+                    string += str(follow_time.hours) + ' hour '
+                elif follow_time.hours > 1:
+                    string += str(follow_time.hours) + ' hours '
                 await ctx.send(string)
             except Exception as e:
                 print(e)
