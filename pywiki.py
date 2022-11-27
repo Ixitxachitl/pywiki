@@ -84,11 +84,6 @@ class Bot(commands.Bot):
                                    'client_secret': self.config['keys']['imgur_client_secret'],
                                    'access_token': self.config['keys']['imgur_access_token'],
                                    'refresh_token': self.config['keys']['imgur_refresh_token']})
-        '''
-        self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
-        with open('keys.ini', 'w') as configfile:
-            self.config.write(configfile)
-        '''
 
         self.keysig = {
             'c': {
@@ -220,6 +215,9 @@ class Bot(commands.Bot):
                 await channel.send(response)
         elif event_id == 'Image Generator':
             try:
+                self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
+                with open('keys.ini', 'w') as configfile:
+                    self.config.write(configfile)
                 image = openai.Image.create(prompt=event.input,
                                             n=1,
                                             size="512x512")
@@ -591,6 +589,9 @@ class Bot(commands.Bot):
                 await ctx.send('Please provide an input text')
             else:
                 try:
+                    self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
+                    with open('keys.ini', 'w') as configfile:
+                        self.config.write(configfile)
                     image = openai.Image.create(prompt=args,
                                                 n=1,
                                                 size="512x512")
@@ -600,6 +601,7 @@ class Bot(commands.Bot):
                     response = \
                         self.imgur_client.image_upload(path.relpath('./' + str(image['created']) + '.png'),
                                                        str(image['created']), args)
+                    print(response['status'])
                     await ctx.send(response['response']['data']['link'])
                 except openai.error.OpenAIError as e:
                     await ctx.send(e.error.message)
@@ -618,6 +620,9 @@ class Bot(commands.Bot):
                 await ctx.send('Please provide an input text')
             else:
                 try:
+                    self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
+                    with open('keys.ini', 'w') as configfile:
+                        self.config.write(configfile)
                     answers = self.stability_api.generate(prompt=args,
                                                           sampler=generation.SAMPLER_K_DPM_2_ANCESTRAL,
                                                           guidance_preset=generation.GUIDANCE_PRESET_FAST_BLUE)
@@ -637,7 +642,7 @@ class Bot(commands.Bot):
                                                                    artifact.seed, args)
                                 await ctx.send(response['response']['data']['link'])
                 except Exception as e:
-                    await ctx.send(str(e)[:500])
+                    await ctx.send('Communication Error, Try Again')
                     for item in ctx.command._cooldowns[0]._cache:
                         if item[1] == ctx.message.author.id:
                             ctx.command._cooldowns[0]._cache.update({item: (0, 0)})
