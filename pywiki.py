@@ -218,6 +218,10 @@ class Bot(commands.Bot):
                 self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
                 with open('keys.ini', 'w') as configfile:
                     self.config.write(configfile)
+                self.imgur_client = Imgur({'client_id': self.config['keys']['imgur_client_id'],
+                                           'client_secret': self.config['keys']['imgur_client_secret'],
+                                           'access_token': self.config['keys']['imgur_access_token'],
+                                           'refresh_token': self.config['keys']['imgur_refresh_token']})
                 image = openai.Image.create(prompt=event.input,
                                             n=1,
                                             size="512x512")
@@ -592,6 +596,10 @@ class Bot(commands.Bot):
                     self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
                     with open('keys.ini', 'w') as configfile:
                         self.config.write(configfile)
+                    self.imgur_client = Imgur({'client_id': self.config['keys']['imgur_client_id'],
+                                               'client_secret': self.config['keys']['imgur_client_secret'],
+                                               'access_token': self.config['keys']['imgur_access_token'],
+                                               'refresh_token': self.config['keys']['imgur_refresh_token']})
                     image = openai.Image.create(prompt=args,
                                                 n=1,
                                                 size="512x512")
@@ -623,6 +631,10 @@ class Bot(commands.Bot):
                     self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
                     with open('keys.ini', 'w') as configfile:
                         self.config.write(configfile)
+                    self.imgur_client = Imgur({'client_id': self.config['keys']['imgur_client_id'],
+                                               'client_secret': self.config['keys']['imgur_client_secret'],
+                                               'access_token': self.config['keys']['imgur_access_token'],
+                                               'refresh_token': self.config['keys']['imgur_refresh_token']})
                     answers = self.stability_api.generate(prompt=args,
                                                           sampler=generation.SAMPLER_K_DPM_2_ANCESTRAL,
                                                           guidance_preset=generation.GUIDANCE_PRESET_FAST_BLUE)
