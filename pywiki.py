@@ -48,6 +48,7 @@ class Bot(commands.Bot):
         self.prefix = '!'
         super().__init__(token=self.config['keys']['token'], prefix=self.prefix,
                          initial_channels=self.config['options']['channel'].split(','),
+                         client_id=self.config['keys']['client_id'],
                          client_secret=self.config['keys']['client_secret'],
                          case_insensitive=True)
         self.client_id = self.config['keys']['client_id']
@@ -414,6 +415,8 @@ class Bot(commands.Bot):
                 data = {'title': args}
                 response = requests.patch(url=url, headers=headers, data=json.dumps(data))
                 print(response)
+                # await user[0].modify_stream(token=self.users_oauth_token, title=args) #proper way to do it doesn't
+                #    find client id?
                 await ctx.send('Set title to: ' + args)
 
     @commands.command()
