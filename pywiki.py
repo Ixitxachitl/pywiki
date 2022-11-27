@@ -414,9 +414,8 @@ class Bot(commands.Bot):
                            'Content-Type': 'application/json'}
                 data = {'title': args}
                 response = requests.patch(url=url, headers=headers, data=json.dumps(data))
-                # print(response.status_code)
                 # await user[0].modify_stream(token=self.users_oauth_token, title=args) #proper way to do it doesn't
-                #    find client id?
+                #                                                                        find client id?
                 if response.status_code == 204:
                     await ctx.send('Set title to: ' + args)
                 else:
