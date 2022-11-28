@@ -32,7 +32,7 @@ from geopy import geocoders
 from imdb import Cinemagoer
 from pyowm.owm import OWM
 from pytz import timezone
-from rich import print
+from rich import print as rprint
 from twitchio.ext import commands
 from twitchio.ext import pubsub
 from stability_sdk import client
@@ -207,10 +207,10 @@ class Bot(commands.Bot):
         elif event_id == 'AI':
             response = self.ai_complete(self, event.input)
 
-            while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
-                response.choices[0].text = response.choices[0].text[1:]
-
             if hasattr(response, 'choices'):
+                response.choices[0].text = response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')
+                while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
+                    response.choices[0].text = response.choices[0].text[1:]
                 await channel.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
             else:
                 await channel.send(response)
@@ -317,20 +317,20 @@ class Bot(commands.Bot):
             await self.snes_connect()
         if self.config['options']['pubsub_enabled'] == 'True':
             await self.pubsub.subscribe_topics(self.topics)
-            print('[bold green]Pubsub Ready[/]')
+            rprint('[bold green]Pubsub Ready[/]')
 
     async def event_channel_joined(self, channel):
         print('Joined ' + channel.name)
 
     async def event_command_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
-            print('[bold red]' + str(error) + '[/]')
+            rprint('[bold red]' + str(error) + '[/]')
             await ctx.send('@' + ctx.message.author.name + ' This command is on cooldown, you can use it in ' +
                            str(round(error.retry_after, 2)) + ' seconds')
         elif isinstance(error, commands.CommandNotFound):
-            print('[bold red]' + error.args[0] + '[/]')
+            rprint('[bold red]' + error.args[0] + '[/]')
         elif isinstance(error, commands.MissingRequiredArgument):
-            print('[bold red]' + error.args[0] + '[/]')
+            rprint('[bold red]' + error.args[0] + '[/]')
         else:
             raise error
 
@@ -354,7 +354,7 @@ class Bot(commands.Bot):
                     author = '🗡️' + author
                 if bot_chatter.is_broadcaster:
                     author = '🎥️' + author
-                print(start_color + author + end_color + ': ' + message.content)
+                rprint(start_color + author + end_color + ': ' + message.content)
             else:
                 print(message.author.name + ': ' + message.content)
             return
@@ -373,7 +373,7 @@ class Bot(commands.Bot):
             author = '🗡️' + author
         if message.author.is_broadcaster:
             author = '🎥️' + author
-        print(start_color + author + end_color + ': ' + message.content)
+        rprint(start_color + author + end_color + ': ' + message.content)
 
         self.config.read(r'keys.ini')
 
@@ -585,9 +585,11 @@ class Bot(commands.Bot):
                 response = self.ai_complete(self, args)
 
                 if hasattr(response, 'choices'):
+                    response.choices[0].text = response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')
                     while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
                         response.choices[0].text = response.choices[0].text[1:]
-                    await ctx.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
+                        print(response.choices[0].text)
+                    await ctx.send(response.choices[0].text[:500])
                 else:
                     await ctx.send(response)
 
@@ -1015,7 +1017,7 @@ class Bot(commands.Bot):
                 output = ''
                 for strain in strains:
                     if strain['name'].lower() == args.lower():
-                        description = ' '.join(re.split(r'(?<=[.:;])\s', strain['description'])[:2])
+                        description = ' '.join(re.split(r'(?<=[.:;])\s', strain['description'])[:3])
                         output = strain['name'] + ': ' + description
                         break
                     try:
@@ -1025,12 +1027,12 @@ class Bot(commands.Bot):
                         ratio = 0
                     if ratio > last_ratio:
                         last_ratio = ratio
-                        description = ' '.join(re.split(r'(?<=[.:;])\s', strain['description'])[:2])
+                        description = ' '.join(re.split(r'(?<=[.:;])\s', strain['description'])[:3])
                         output = strain['name'] + ': ' + description
                 await ctx.send(output[:500])
             else:
                 strain = random.choice(strains)
-                description = ' '.join(re.split(r'(?<=[.:;])\s', strain['description'])[:2])
+                description = ' '.join(re.split(r'(?<=[.:;])\s', strain['description'])[:3])
                 output = strain['name'] + ': ' + description
                 await ctx.send(output[:500])
 
