@@ -688,24 +688,6 @@ class Bot(commands.Bot):
                     out = r['error']
                 await ctx.send(out)
 
-    @commands.cooldown(rate=1, per=float(config['options']['udefine_cooldown']), bucket=commands.Bucket.member)
-    @commands.command()
-    async def udefine(self, ctx: commands.Context, *, args=None):
-        self.config.read(r'keys.ini')
-        if self.config['options']['udefine_enabled'] == 'True':
-            if args is None:
-                await ctx.send('Please provide an input text')
-            else:
-                url = 'https://api.urbandictionary.com/v0/define?term=' + args
-                r = requests.get(url).json()
-                try:
-                    word = r['list'][0]['word']
-                    definition = r['list'][0]['definition']
-                    response = word.capitalize() + ' - ' + re.sub(r"[\[\]]", "", definition)
-                    await ctx.send(response[:500])
-                except IndexError as e:
-                    await ctx.send('Word ' + args + ' not found')
-
     @commands.cooldown(rate=1, per=float(config['options']['etymology_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def etymology(self, ctx: commands.Context, *, args=None):
