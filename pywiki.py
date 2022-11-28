@@ -342,7 +342,7 @@ class Bot(commands.Bot):
                 if chatter.name == self.nick:
                     bot_chatter = chatter
                     break
-            if bot_chatter is not None:
+            if bot_chatter.color is not None:
                 start_color = '[bold ' + bot_chatter.color + ']'
                 end_color = '[/]'
                 author = bot_chatter.display_name
@@ -1001,6 +1001,38 @@ class Bot(commands.Bot):
                         del item
                 machine = random.choice(machines['machines'])
                 await ctx.send(machine['name'] + ': ' + machine['ipdb_link'])
+
+    @commands.cooldown(rate=1, per=float(config['options']['strain_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def strain(self, ctx: commands.Context, *, args=None):
+        self.config.read(r'keys.ini')
+        if self.config['options']['strain_enabled'] == 'True':
+            with open('strain_data.json', encoding='utf8') as strain_data:
+                strains = json.load(strain_data)
+            # print(json.dumps(machines,indent=4,sort_keys=True))
+            if args is not None:
+                last_ratio = 0
+                output = ''
+                for strain in strains:
+                    if strain['name'].lower() == args.lower():
+                        description = ' '.join(re.split(r'(?<=[.:;])\s', strain['description'])[:2])
+                        output = strain['name'] + ': ' + description
+                        break
+                    try:
+                        ratio = fuzz.ratio(args.lower(), strain['name'].lower())
+                    except Exception as e:
+                        print(e)
+                        ratio = 0
+                    if ratio > last_ratio:
+                        last_ratio = ratio
+                        description = ' '.join(re.split(r'(?<=[.:;])\s', strain['description'])[:2])
+                        output = strain['name'] + ': ' + description
+                await ctx.send(output[:500])
+            else:
+                strain = random.choice(strains)
+                description = ' '.join(re.split(r'(?<=[.:;])\s', strain['description'])[:2])
+                output = strain['name'] + ': ' + description
+                await ctx.send(output[:500])
 
     @commands.cooldown(rate=1, per=float(config['options']['trivia_cooldown']), bucket=commands.Bucket.channel)
     @commands.command()
