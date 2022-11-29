@@ -806,8 +806,6 @@ class Bot(commands.Bot):
             output += '!define '
         if self.config['options']['etymology_enabled'] == 'True':
             output += '!etymology '
-        if self.config['options']['udefine_enabled'] == 'True':
-            output += '!udefine '
         if self.config['options']['translate_enabled'] == 'True':
             output += '!translate '
         if self.config['options']['weather_enabled'] == 'True':
@@ -834,6 +832,12 @@ class Bot(commands.Bot):
             output += '!trivia '
         if self.config['options']['leaderboard_enabled'] == 'True':
             output += '!leaderboard '
+        if self.config['options']['strain_enabled'] == 'True':
+            output += '!strain '
+        if self.config['options']['nasa_enabled'] == 'True':
+            output += '!nasa '
+        if self.config['options']['apod_enabled'] == 'True':
+            output += '!apod'
 
         await ctx.send(output)
 
