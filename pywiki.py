@@ -627,6 +627,9 @@ class Bot(commands.Bot):
                     # # # This is super dirty
                     ctx.command._cooldowns[0]._cache.update({(ctx.channel.name, ctx.message.author.id): (1, 0)})
                     # # # Don't ever do this ^
+                except TimeoutError as e:
+                    await ctx.send(e)
+                    ctx.command._cooldowns[0]._cache.update({(ctx.channel.name, ctx.message.author.id): (1, 0)})
 
     @commands.cooldown(rate=1, per=float(config['options']['dream_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
