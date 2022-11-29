@@ -1028,6 +1028,35 @@ class Bot(commands.Bot):
                 output = strain['name'] + ': ' + description
                 await ctx.send(output[:500])
 
+    @commands.cooldown(rate=1, per=float(config['options']['nasa_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def nasa(self, ctx: commands.Context, *, args=None):
+        self.config.read(r'keys.ini')
+        if self.config['options']['nasa_enabled'] == 'True':
+            if args is None:
+                await ctx.send('Please provide search term')
+            else:
+                url = 'https://images-api.nasa.gov/search?q=' + args + '&media_type=image'
+                response = requests.get(url).json()
+                print(json.dumps(response, indent=4, sort_keys=True))
+                entry = random.choice(response['collection']['items'])
+                image_url = entry['links'][0]['href']
+                title = entry['data'][0]['title']
+                await ctx.send(title + ' - ' + image_url)
+
+    @commands.cooldown(1, float(config['options']['apod_cooldown']), commands.Bucket.member)
+    @commands.command()
+    async def apod(self, ctx):
+        if self.config['options']['apod_enabled'] == 'True':
+            date = datetime.date.today().strftime('%Y-%m-%d')
+            url = 'https://api.nasa.gov/planetary/apod?api_key=' + self.config['keys']['NASA_api_key'] +\
+                  '&date=' + date
+            response = requests.get(url).json()
+            # print(json.dumps(response, indent=4, sort_keys=True))
+            image_url = response['url']
+            title = response['title']
+            await ctx.send(title + ' - ' + image_url)
+
     @commands.cooldown(rate=1, per=float(config['options']['trivia_cooldown']), bucket=commands.Bucket.channel)
     @commands.command()
     async def trivia(self, ctx: commands.Context):
