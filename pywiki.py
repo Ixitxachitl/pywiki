@@ -326,8 +326,9 @@ class Bot(commands.Bot):
     async def event_command_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             rprint('[bold red]' + str(error) + '[/]')
+            retry = relativedelta(seconds=error.retry_after)
             await ctx.send('@' + ctx.message.author.name + ' This command is on cooldown, you can use it in ' +
-                           str(round(error.retry_after, 2)) + ' seconds')
+                           str(int(retry.hours)) + ':' + str(int(retry.minutes)) + ':' + str(int(retry.seconds)))
         elif isinstance(error, commands.CommandNotFound):
             rprint('[bold red]' + error.args[0] + '[/]')
         elif isinstance(error, commands.MissingRequiredArgument):
