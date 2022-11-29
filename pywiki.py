@@ -209,9 +209,10 @@ class Bot(commands.Bot):
 
             if hasattr(response, 'choices'):
                 response.choices[0].text = response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')
+                response.choices[0].text = ' '.join(re.split(r'(?<=[.:;])\s', response.choices[0].text)[:3])
                 while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
                     response.choices[0].text = response.choices[0].text[1:]
-                await channel.send(response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')[:500])
+                await channel.send(response.choices[0].text[:500])
             else:
                 await channel.send(response)
         elif event_id == 'Image Generator':
@@ -586,6 +587,7 @@ class Bot(commands.Bot):
 
                 if hasattr(response, 'choices'):
                     response.choices[0].text = response.choices[0].text.strip().replace('\r', ' ').replace('\n', ' ')
+                    response.choices[0].text = ' '.join(re.split(r'(?<=[.:;])\s', response.choices[0].text)[:3])
                     while response.choices[0].text.startswith('.') or response.choices[0].text.startswith('/'):
                         response.choices[0].text = response.choices[0].text[1:]
                         print(response.choices[0].text)
