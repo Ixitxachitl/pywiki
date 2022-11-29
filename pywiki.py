@@ -602,6 +602,7 @@ class Bot(commands.Bot):
         if self.config['options']['imagine_enabled'] == 'True':
             if args is None:
                 await ctx.send('Please provide an input text')
+                ctx.command._cooldowns[0]._cache.update({(ctx.channel.name, ctx.message.author.id): (1, 0)})
             else:
                 try:
                     self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
@@ -634,6 +635,7 @@ class Bot(commands.Bot):
         if self.config['options']['dream_enabled'] == 'True':
             if args is None:
                 await ctx.send('Please provide an input text')
+                ctx.command._cooldowns[0]._cache.update({(ctx.channel.name, ctx.message.author.id): (1, 0)})
             else:
                 try:
                     self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
