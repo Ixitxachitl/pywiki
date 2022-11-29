@@ -928,32 +928,35 @@ class Bot(commands.Bot):
 
             url = 'https://bulbapedia.bulbagarden.net/w/api.php?&format=json&action=parse&page=' \
                   + pokemon + '_(Pokémon)'
-            parse = requests.get(url).json()['parse']['text']['*']
-            soup = BeautifulSoup(parse, 'html.parser')
-            description = ''
-            for p in soup.find_all('p'):
-                if p.get_text().strip().lower().startswith(pokemon.lower()):
-                    description = p.get_text().strip()
-                    break
-            flavor_texts = ['']
             try:
-                url = 'https://pokeapi.co/api/v2/pokemon-species/' + pokemon.lower()
-                headers = {
-                    'User-Agent': 'pyWiki'
-                }
-                entry = requests.get(url, headers=headers).json()
+                parse = requests.get(url).json()['parse']['text']['*']
+                soup = BeautifulSoup(parse, 'html.parser')
+                description = ''
+                for p in soup.find_all('p'):
+                    if p.get_text().strip().lower().startswith(pokemon.lower()):
+                        description = p.get_text().strip()
+                        break
+                flavor_texts = ['']
+                try:
+                    url = 'https://pokeapi.co/api/v2/pokemon-species/' + pokemon.lower()
+                    headers = {
+                        'User-Agent': 'pyWiki'
+                    }
+                    entry = requests.get(url, headers=headers).json()
 
-                flavor_texts = []
-                for entries in entry['flavor_text_entries']:
-                    if entries['language']['name'] == 'en':
-                        flavor_texts.append(entries['flavor_text'])
+                    flavor_texts = []
+                    for entries in entry['flavor_text_entries']:
+                        if entries['language']['name'] == 'en':
+                            flavor_texts.append(entries['flavor_text'])
 
-                random.shuffle(flavor_texts)
+                    random.shuffle(flavor_texts)
 
-            except requests.exceptions.JSONDecodeError as e:
-                print(e)
-            output = description + ' ' + flavor_texts[0]
-            await ctx.send(output.replace('\r', ' ').replace('\n', ' ')[:500])
+                except requests.exceptions.JSONDecodeError as e:
+                    print(e)
+                output = description + ' ' + flavor_texts[0]
+                await ctx.send(output.replace('\r', ' ').replace('\n', ' ')[:500])
+            except KeyError as e:
+                await ctx.send('Pokemon ' + pokemon + ' not found')
 
     @commands.cooldown(rate=1, per=float(config['options']['pinball_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
