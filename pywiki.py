@@ -1041,13 +1041,16 @@ class Bot(commands.Bot):
             if args is None:
                 await ctx.send('Please provide search term')
             else:
-                url = 'https://images-api.nasa.gov/search?q=' + args + '&media_type=image'
-                response = requests.get(url).json()
-                # print(json.dumps(response, indent=4, sort_keys=True))
-                entry = random.choice(response['collection']['items'])
-                image_url = entry['links'][0]['href']
-                title = entry['data'][0]['title']
-                await ctx.send(title + ' - ' + image_url)
+                try:
+                    url = 'https://images-api.nasa.gov/search?q=' + args + '&media_type=image'
+                    response = requests.get(url).json()
+                    # print(json.dumps(response, indent=4, sort_keys=True))
+                    entry = random.choice(response['collection']['items'])
+                    image_url = entry['links'][0]['href']
+                    title = entry['data'][0]['title']
+                    await ctx.send(title + ' - ' + image_url)
+                except IndexError as e:
+                    await ctx.send('No images found')
 
     @commands.cooldown(1, float(config['options']['apod_cooldown']), commands.Bucket.member)
     @commands.command()
