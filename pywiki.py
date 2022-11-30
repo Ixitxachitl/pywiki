@@ -1043,7 +1043,7 @@ class Bot(commands.Bot):
             else:
                 url = 'https://images-api.nasa.gov/search?q=' + args + '&media_type=image'
                 response = requests.get(url).json()
-                print(json.dumps(response, indent=4, sort_keys=True))
+                # print(json.dumps(response, indent=4, sort_keys=True))
                 entry = random.choice(response['collection']['items'])
                 image_url = entry['links'][0]['href']
                 title = entry['data'][0]['title']
