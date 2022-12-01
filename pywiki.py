@@ -669,7 +669,7 @@ class Bot(commands.Bot):
                                     self.imgur_client.image_upload(path.relpath('./' + str(artifact.seed) + '.png'),
                                                                    artifact.seed, args)
                                 await ctx.send(response['response']['data']['link'])
-                except Exception as e:
+                except Exception:
                     await ctx.send('Communication Error, Try Again')
                     ctx.command._cooldowns[0]._cache.update({(ctx.channel.name, ctx.message.author.id): (1, 0)})
 
@@ -904,16 +904,21 @@ class Bot(commands.Bot):
             if args is None:
                 await ctx.send('Please provide a Movie, Show, or Game')
             else:
-                movies = self.ia.search_movie(args)
-                movie = movies[0]
-                # print(movie)
-                movie_id = movie.movieID
-                # print(movie_id)
-                movie_info = self.ia.get_movie(movie_id)
-                # print(movie_info.get('plot')[0])
-                return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' +\
-                    movie_info.get('plot')[0]
-                await ctx.send(return_string[:500])
+                try:
+                    movies = self.ia.search_movie(args)
+                    movie = movies[0]
+                    # print(movie)
+                    movie_id = movie.movieID
+                    # print(movie_id)
+                    movie_info = self.ia.get_movie(movie_id)
+                    # print(movie_info.get('plot')[0])
+                    return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' +\
+                        movie_info.get('plot')[0]
+                    await ctx.send(return_string[:500])
+                except IndexError:
+                    await ctx.send('Entry not found')
+                except Exception as e:
+                    await ctx.send('Parse Error. ' + str(e))
 
     @commands.cooldown(rate=1, per=float(config['options']['pokemon_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
@@ -961,7 +966,7 @@ class Bot(commands.Bot):
                     print(e)
                 output = description + ' ' + flavor_texts[0]
                 await ctx.send(output.replace('\r', ' ').replace('\n', ' ')[:500])
-            except KeyError as e:
+            except KeyError:
                 await ctx.send('Pokemon ' + pokemon + ' not found')
 
     @commands.cooldown(rate=1, per=float(config['options']['pinball_cooldown']), bucket=commands.Bucket.member)
