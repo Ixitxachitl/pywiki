@@ -217,7 +217,7 @@ class Bot(commands.Bot):
                 await channel.send(response)
         elif event_id == 'Image Generator':
             try:
-                self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
+                self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()['response']['access_token']
                 with open('keys.ini', 'w') as configfile:
                     self.config.write(configfile)
                 self.imgur_client = Imgur({'client_id': self.config['keys']['imgur_client_id'],
@@ -606,7 +606,8 @@ class Bot(commands.Bot):
                 ctx.command._cooldowns[0]._cache.update({(ctx.channel.name, ctx.message.author.id): (1, 0)})
             else:
                 try:
-                    self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
+                    self.config['keys']['imgur_access_token'] =\
+                        self.imgur_client.access_token()['response']['access_token']
                     with open('keys.ini', 'w') as configfile:
                         self.config.write(configfile)
                     self.imgur_client = Imgur({'client_id': self.config['keys']['imgur_client_id'],
@@ -642,7 +643,8 @@ class Bot(commands.Bot):
                 ctx.command._cooldowns[0]._cache.update({(ctx.channel.name, ctx.message.author.id): (1, 0)})
             else:
                 try:
-                    self.config['keys']['imgur_access_token'] = self.imgur_client.access_token()
+                    self.config['keys']['imgur_access_token'] =\
+                        self.imgur_client.access_token()['response']['access_token']
                     with open('keys.ini', 'w') as configfile:
                         self.config.write(configfile)
                     self.imgur_client = Imgur({'client_id': self.config['keys']['imgur_client_id'],
@@ -1056,9 +1058,9 @@ class Bot(commands.Bot):
     @commands.command()
     async def apod(self, ctx):
         if self.config['options']['apod_enabled'] == 'True':
-            date = datetime.date.today().strftime('%Y-%m-%d')
-            url = 'https://api.nasa.gov/planetary/apod?api_key=' + self.config['keys']['NASA_api_key'] +\
-                  '&date=' + date
+            # date = datetime.date.today().strftime('%Y-%m-%d')
+            url = 'https://api.nasa.gov/planetary/apod?api_key=' + self.config['keys']['NASA_api_key']
+            # + '&date=' + date
             response = requests.get(url).json()
             # print(json.dumps(response, indent=4, sort_keys=True))
             image_url = response['url']
