@@ -998,7 +998,7 @@ class Bot(commands.Bot):
             else:
                 for item in machines['machines']:
                     if item['ipdb_link'] is None:
-                        del item
+                        machines['machines'].remove(item)
                 machine = random.choice(machines['machines'])
                 await ctx.send(machine['name'] + ': ' + machine['ipdb_link'])
 
