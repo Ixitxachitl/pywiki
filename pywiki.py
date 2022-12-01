@@ -79,6 +79,7 @@ class Bot(commands.Bot):
             self.stability_api = client.StabilityInference(
                 key=os.environ['STABILITY_KEY'],  # API Key reference.
                 verbose=True,  # Print debug messages.
+                engine='stable-diffusion-512-v2-0',
             )
 
         self.imgur_client = Imgur({'client_id': self.config['keys']['imgur_client_id'],
@@ -331,7 +332,7 @@ class Bot(commands.Bot):
                            str(int(retry.hours)) + ':' + str(int(retry.minutes)) + ':' + str(int(retry.seconds)))
         elif isinstance(error, commands.CommandNotFound):
             rprint('[bold red]' + error.args[0] + '[/]')
-        elif isinstance(error, commands.MissingRequiredArgument):
+        elif isinstance(error, commands.MissingRequiredArgument):  # Doesn't work
             rprint('[bold red]' + error.args[0] + '[/]')
         else:
             raise error
@@ -652,8 +653,8 @@ class Bot(commands.Bot):
                                                'access_token': self.config['keys']['imgur_access_token'],
                                                'refresh_token': self.config['keys']['imgur_refresh_token']})
                     answers = self.stability_api.generate(prompt=args,
-                                                          sampler=generation.SAMPLER_K_DPM_2_ANCESTRAL,
-                                                          guidance_preset=generation.GUIDANCE_PRESET_FAST_BLUE)
+                                                          sampler=generation.SAMPLER_K_DPMPP_2S_ANCESTRAL,
+                                                          guidance_preset=generation.GUIDANCE_PRESET_FAST_GREEN)
                     for resp in answers:
                         for artifact in resp.artifacts:
                             if artifact.finish_reason == generation.FILTER:
