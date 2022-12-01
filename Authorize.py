@@ -3,12 +3,11 @@
 """
 Generate authorization link
 """
-import json
 
 import requests
+from .ImgurBase import ImgurBase
 
-
-class Authorize():
+class Authorize(ImgurBase):
     "Class to authorize account with the app"
 
     def __init__(self, config, api_url):
@@ -30,5 +29,4 @@ class Authorize():
             'grant_type': 'refresh_token'
         }
         request = requests.post(url, data=payload)
-        request_content = json.loads(request.content.decode('utf-8'))
-        return request_content['access_token']
+        return self.response(request, url)
