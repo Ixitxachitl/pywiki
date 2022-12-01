@@ -904,23 +904,16 @@ class Bot(commands.Bot):
             if args is None:
                 await ctx.send('Please provide a Movie, Show, or Game')
             else:
-                movie = ''
-                for x in range(0, 10):
-                    try:
-                        movies = self.ia.search_movie(args)
-                        movie = movies[0]
-                        break
-                    except IndexError as e:
-                        print(e)
-                if movie != '':
-                    # print(movie)
-                    movie_id = movie.movieID
-                    # print(movie_id)
-                    movie_info = self.ia.get_movie(movie_id)
-                    # print(movie_info.get('plot')[0])
-                    return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' +\
-                        movie_info.get('plot')[0]
-                    await ctx.send(return_string[:500])
+                movies = self.ia.search_movie(args)
+                movie = movies[0]
+                # print(movie)
+                movie_id = movie.movieID
+                # print(movie_id)
+                movie_info = self.ia.get_movie(movie_id)
+                # print(movie_info.get('plot')[0])
+                return_string = movie.get('title') + ' (' + str(movie_info.get('year')) + '): ' +\
+                    movie_info.get('plot')[0]
+                await ctx.send(return_string[:500])
 
     @commands.cooldown(rate=1, per=float(config['options']['pokemon_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
