@@ -1069,10 +1069,7 @@ class Bot(commands.Bot):
     async def trivia(self, ctx: commands.Context):
         self.config.read(r'keys.ini')
         if self.config['options']['trivia_enabled'] == 'True' and ctx.channel.name not in self.trivia_guesses:
-            if ctx.channel.name in self.trivia_guesses.keys():
-                self.trivia_guesses[ctx.channel.name].clear()
-            else:
-                self.trivia_guesses.update({ctx.channel.name: {}})
+            self.trivia_guesses.update({ctx.channel.name: {}})
             fast = False
             bot_chatter = ctx.channel.get_chatter(self.nick)
             if bot_chatter.is_mod or bot_chatter.is_vip:
