@@ -33,7 +33,7 @@ You'll need keys:
 - detect language api key
 - NASA api key for APOD
 - To use pubsub you'll need an oauth key with the proper scope: 'channel:read:redemptions'
-- To use settitle and setgame you'll need an outath key with the proper scope: 'channel:manage:broadcast'
+- To use settitle and setgame you'll need an oauth key with the proper scope: 'channel:manage:broadcast'
 - Note: both of the custom scope keys are the same key, just make sure you request both scopes.
 - to authorize imgur obtain a client id and use the imgur_auth.py script to login and parse the return url, https://imgur-python.readthedocs.io/en/latest/authorize/
 - imgur currently has a bug in the reauthorizing script that breaks things, to fix temporarily replace Authorize.py with the on in this project 
