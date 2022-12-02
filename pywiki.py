@@ -240,10 +240,9 @@ class Bot(commands.Bot):
         elif event_id == 'Trivia' and channel.name not in self.trivia_guesses:
             self.trivia_guesses.update({channel.name: {}})
             fast = False
-            for chatter in channel.chatters:
-                if chatter.name == self.nick:
-                    if chatter.is_mod or chatter.is_vip:
-                        fast = True
+            bot_chatter = channel.get_chatter(self.nick)
+            if bot_chatter.is_mod or bot_chatter.is_vip:
+                fast = True
             url = 'https://opentdb.com/api.php?amount=1&type=multiple'
             trivia_object = requests.get(url).json()
             # print(json.dumps(trivia_object, indent=4, sort_keys=True))
