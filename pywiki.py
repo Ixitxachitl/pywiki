@@ -238,10 +238,7 @@ class Bot(commands.Bot):
             except openai.error.OpenAIError as e:
                 await channel.send(e.error.message)
         elif event_id == 'Trivia' and channel.name not in self.trivia_guesses:
-            if channel.name in self.trivia_guesses.keys():
-                self.trivia_guesses[channel.name].clear()
-            else:
-                self.trivia_guesses.update({channel.name: {}})
+            self.trivia_guesses.update({channel.name: {}})
             fast = False
             for chatter in channel.chatters:
                 if chatter.name == self.nick:
