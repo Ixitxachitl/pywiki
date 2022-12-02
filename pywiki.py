@@ -1074,10 +1074,9 @@ class Bot(commands.Bot):
             else:
                 self.trivia_guesses.update({ctx.channel.name: {}})
             fast = False
-            for chatter in ctx.channel.chatters:
-                if chatter.name == self.nick:
-                    if chatter.is_mod or chatter.is_vip:
-                        fast = True
+            bot_chatter = ctx.channel.get_chatter(self.nick)
+            if bot_chatter.is_mod or bot_chatter.is_vip:
+                fast = True
             url = 'https://opentdb.com/api.php?amount=1&type=multiple'
             trivia_object = requests.get(url).json()
             # print(json.dumps(trivia_object, indent=4, sort_keys=True))
