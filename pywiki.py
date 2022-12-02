@@ -340,15 +340,13 @@ class Bot(commands.Bot):
     async def event_message(self, message):
         if message.echo:
             channel = message.channel
-            bot_chatter = None
-            for chatter in channel.chatters:
-                if chatter.name == self.nick:
-                    bot_chatter = chatter
-                    break
-            if bot_chatter.color is not None:
-                start_color = '[bold ' + bot_chatter.color + ']'
+            bot_chatter = channel.get_chatter(self.nick)
+            bot_user = await self.fetch_users([bot_chatter.name])
+            bot_color = await self.fetch_chatters_colors([bot_user[0].id])
+            if bot_color[0].color is not None:
+                start_color = '[bold ' + bot_color[0].color + ']'
                 end_color = '[/]'
-                author = bot_chatter.display_name
+                author = bot_user[0].display_name
                 if bot_chatter.is_subscriber:
                     author = '✨' + author
                 if bot_chatter.is_vip:
@@ -410,7 +408,7 @@ class Bot(commands.Bot):
             if args is None:
                 await ctx.send('Please provide an input text')
             else:
-                user = await bot.fetch_users([ctx.channel.name])
+                user = await self.fetch_users([ctx.channel.name])
                 url = 'https://api.twitch.tv/helix/channels?broadcaster_id=' + str(user[0].id)
                 headers = {'Authorization': 'Bearer ' + self.users_oauth_token,
                            'Client-ID': self.client_id,
@@ -427,9 +425,9 @@ class Bot(commands.Bot):
     @commands.command()
     async def setgame(self, ctx: commands.Context, *, args=None):
         if ctx.message.author.is_broadcaster or ctx.message.author.is_mod and self.users_channel == ctx.channel.name:
-            user = await bot.fetch_users([ctx.channel.name])
+            user = await self.fetch_users([ctx.channel.name])
             if args is not None:
-                game = await bot.fetch_games(names=[args])
+                game = await self.fetch_games(names=[args])
                 game_id = game[0].id
                 data = {'game_id': str(game_id)}
             else:
@@ -480,8 +478,8 @@ class Bot(commands.Bot):
     async def uptime(self, ctx: commands.Context):
         self.config.read(r'keys.ini')
         if self.config['options']['uptime_enabled'] == 'True':
-            channel = await bot.fetch_users([ctx.channel.name])
-            stream = await bot.fetch_streams([channel[0].id])
+            channel = await self.fetch_users([ctx.channel.name])
+            stream = await self.fetch_streams([channel[0].id])
             try:
                 started_at = stream[0].started_at.strftime('%Y-%m-%dT%H:%M:%SZ')
                 con_started_at = datetime.datetime.strptime(started_at, '%Y-%m-%dT%H:%M:%SZ')
@@ -506,8 +504,8 @@ class Bot(commands.Bot):
         self.config.read(r'keys.ini')
         if self.config['options']['followage_enabled'] == 'True':
 
-            from_user = await bot.fetch_users([ctx.message.author.name])
-            to_user = await bot.fetch_users([ctx.message.channel.name])
+            from_user = await self.fetch_users([ctx.message.author.name])
+            to_user = await self.fetch_users([ctx.message.channel.name])
 
             follow = await from_user[0].fetch_follow(to_user[0])
 
@@ -1148,7 +1146,7 @@ class Bot(commands.Bot):
     async def death(self, ctx: commands.Context):
         if ctx.author.is_mod or ctx.author.is_broadcaster:
             deaths = random.randint(1, 1000000)
-            broadcaster = await bot.fetch_users([ctx.channel.name])
+            broadcaster = await self.fetch_users([ctx.channel.name])
             await ctx.send(broadcaster[0].display_name + ' has died ' + str(deaths) +
                            ' time/s or something, we\'re not really counting.')
 
@@ -1156,7 +1154,7 @@ class Bot(commands.Bot):
     @commands.command()
     async def snork(self, ctx: commands.Context):
         snoot = random.choice(list(ctx.channel.chatters))
-        snoot = await bot.fetch_users([snoot.name])
+        snoot = await self.fetch_users([snoot.name])
         await ctx.send(ctx.message.author.display_name + ' snorked ' + snoot[0].display_name)
 
     @commands.command()
