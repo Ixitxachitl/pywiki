@@ -274,10 +274,12 @@ class Bot(commands.Bot):
                 winner_list = json.load(infile)
             for key in self.trivia_guesses[channel.name]:
                 if self.trivia_guesses[channel.name][key] == correct_answer:
-                    if key in winner_list.keys():
-                        winner_list.update({key: winner_list[key] + 1})
+                    if channel.name not in winner_list:
+                        winner_list.update({channel.name: {}})
+                    if key in winner_list[channel.name]:
+                        winner_list[channel.name].update({key: winner_list[channel.name][key] + 1})
                     else:
-                        winner_list.update({key: 1})
+                        winner_list[channel.name].update({key: 1})
                     with open('winners.json', 'w') as outfile:
                         json.dump(winner_list, outfile)
                     winners += key + ' '
@@ -1101,10 +1103,12 @@ class Bot(commands.Bot):
                 winner_list = json.load(infile)
             for key in self.trivia_guesses[ctx.channel.name]:
                 if self.trivia_guesses[ctx.channel.name][key] == correct_answer:
-                    if key in winner_list.keys():
-                        winner_list.update({key: winner_list[key] + 1})
+                    if ctx.channel.name not in winner_list:
+                        winner_list.update({ctx.channel.name: {}})
+                    if key in winner_list[ctx.channel.name]:
+                        winner_list[ctx.channel.name].update({key: winner_list[ctx.channel.name][key] + 1})
                     else:
-                        winner_list.update({key: 1})
+                        winner_list[ctx.channel.name].update({key: 1})
                     with open('winners.json', 'w') as outfile:
                         json.dump(winner_list, outfile)
                     winners += key + ' '
@@ -1120,18 +1124,21 @@ class Bot(commands.Bot):
         if self.config['options']['leaderboard_enabled'] == 'True':
             with open('winners.json', encoding='utf8') as infile:
                 winner_list = json.load(infile)
-            winner_list = sorted(winner_list.items(), key=lambda item: item[1])
-            winner_list.reverse()
-            winner_list = dict(winner_list)
-            keys = list(winner_list)
-            top5 = 1
-            output = ''
-            for key in keys:
-                output += '#' + str(top5) + ' - ' + key + ': ' + str(winner_list[key]) + ' '
-                top5 += 1
-                if top5 == 5:
-                    break
-            await ctx.send(output)
+            if ctx.channel.name in winner_list:
+                winner_list = sorted(winner_list[ctx.channel.name].items(), key=lambda item: item[1])
+                winner_list.reverse()
+                winner_list = dict(winner_list)
+                keys = list(winner_list)
+                top5 = 1
+                output = ''
+                for key in keys:
+                    output += '#' + str(top5) + ' - ' + key + ': ' + str(winner_list[key]) + ' '
+                    top5 += 1
+                    if top5 == 5:
+                        break
+                await ctx.send(output)
+            else:
+                await ctx.send('No Leaderboard Yet')
 
     @commands.cooldown(rate=1, per=10, bucket=commands.Bucket.member)
     @commands.command()
