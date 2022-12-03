@@ -913,8 +913,25 @@ class Bot(commands.Bot):
                     await ctx.send(return_string[:500])
                 except IndexError:
                     await ctx.send('Entry not found')
-                except Exception as e:
-                    await ctx.send('Parse Error. ' + str(e))
+
+    @commands.cooldown(rate=1, per=float(config['options']['celeb_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def celeb(self, ctx: commands.Context, *, args=None):
+        self.config.read(r'keys.ini')
+        if self.config['options']['imdb_enabled'] == 'True':
+            if args is None:
+                await ctx.send('Please provide a Celebrity')
+            else:
+                try:
+                    people = self.ia.search_person(args)
+                    person = people[0]
+                    person_id = person.personID
+                    bio = self.ia.get_person(person_id)
+                    return_string = person.get('name') + ' - ' +\
+                        ' '.join(re.split(r'(?<=[.:;])\s', bio.get('mini biography')[0])[:3])
+                    await ctx.send(return_string)
+                except IndexError:
+                    await ctx.send('Entry not found')
 
     @commands.cooldown(rate=1, per=float(config['options']['pokemon_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
