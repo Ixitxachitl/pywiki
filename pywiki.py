@@ -243,7 +243,7 @@ class Bot(commands.Bot):
             bot_chatter = channel.get_chatter(self.nick)
             if bot_chatter.is_mod or bot_chatter.is_vip:
                 fast = True
-            url = 'https://opentdb.com/api.php?amount=1&type=multiple'
+            url = self.config['variables']['trivia_url']
             trivia_object = requests.get(url).json()
             # print(json.dumps(trivia_object, indent=4, sort_keys=True))
             answers = trivia_object['results'][0]['incorrect_answers']
@@ -390,7 +390,7 @@ class Bot(commands.Bot):
                         await message.channel.send(response)
                         break
 
-        if message.channel.name in self.trivia_guesses.keys():
+        if message.channel.name in self.trivia_guesses:
             if message.content.lower() == 'a' or \
                     message.content.lower() == 'b' or \
                     message.content.lower() == 'c' or \
@@ -1072,7 +1072,7 @@ class Bot(commands.Bot):
             bot_chatter = ctx.channel.get_chatter(self.nick)
             if bot_chatter.is_mod or bot_chatter.is_vip:
                 fast = True
-            url = 'https://opentdb.com/api.php?amount=1&type=multiple'
+            url = self.config['variables']['trivia_url']
             trivia_object = requests.get(url).json()
             # print(json.dumps(trivia_object, indent=4, sort_keys=True))
             answers = trivia_object['results'][0]['incorrect_answers']
