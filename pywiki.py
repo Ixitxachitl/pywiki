@@ -826,6 +826,8 @@ class Bot(commands.Bot):
             output += '!pokemon '
         if self.config['options']['imdb_enabled'] == 'True':
             output += '!imdb '
+        if self.config['options']['celeb_enabled'] == 'True':
+            output += '!celeb '
         if self.config['options']['pinball_enabled'] == 'True':
             output += '!pinball '
         if self.config['options']['trivia_enabled'] == 'True':
