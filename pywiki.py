@@ -16,6 +16,7 @@ from html import unescape
 from os import path
 from pprint import pprint
 
+import lyricsgenius
 import openai
 import py2snes
 import pycountry
@@ -66,6 +67,8 @@ class Bot(commands.Bot):
         # print(engines.data)
 
         self.ia = Cinemagoer()
+
+        self.genius = lyricsgenius.Genius(self.config['keys']['genius_access_token'])
 
         self.my_token = self.config['keys']['token']
         self.users_oauth_token = self.config['keys']['pubsub_oauth_token']
@@ -1158,6 +1161,17 @@ class Bot(commands.Bot):
                 await ctx.send(output)
             else:
                 await ctx.send('No Leaderboard Yet')
+
+    @commands.cooldown(rate=1, per=float(config['options']['song_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def song(self, ctx: commands.Context, *, args=None):
+        self.config.read(r'keys.ini')
+        if self.config['options']['song_enabled'] == 'True':
+            if args is None:
+                await ctx.send('Please enter a song')
+            else:
+                song = self.genius.search_song(title=args)
+                await ctx.send(song.title + ' - ' + song.artist + ': ' + song.url)
 
     @commands.cooldown(rate=1, per=10, bucket=commands.Bucket.member)
     @commands.command()
