@@ -21,6 +21,7 @@ Requirements:
 - rich
 - stability_sdk
 - imgur_python
+- lyricsgenius
 - maybe more?...
 
 You'll need keys:
