@@ -843,6 +843,8 @@ class Bot(commands.Bot):
             output += '!nasa '
         if self.config['options']['apod_enabled'] == 'True':
             output += '!apod'
+        if self.config['options']['song_enabled'] == 'True':
+            output += '!song'
 
         await ctx.send(output)
 
