@@ -819,6 +819,8 @@ class Bot(commands.Bot):
             output += '!time '
         if self.config['options']['exchange_enabled'] == 'True':
             output += '!exchange '
+        if self.config['options']['unit_enabled'] == 'True':
+            output += '!unit '
         if self.config['options']['fact_enabled'] == 'True':
             output += '!fact '
         if self.config['options']['key_enabled'] == 'True':
