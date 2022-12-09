@@ -877,6 +877,29 @@ class Bot(commands.Bot):
             data = requests.get(url).json()
             await ctx.send(amount + ' ' + cur_from + ' = ' + str(data['result']) + ' ' + cur_to)
 
+    @commands.cooldown(rate=1, per=float(config['options']['unit_cooldown']), bucket=commands.Bucket.member)
+    @commands.command()
+    async def unit(self, ctx: commands.Context, value="None", from_unit=None, to_unit=None):
+        self.config.read(r'keys.ini')
+        if self.config['options']['unit_enabled'] == 'True':
+            if value.isnumeric():
+                value = float(value)
+                factors = {
+                    "mm": {"cm": 0.1, "m": 0.001, "in": 0.0393701, "ft": 0.00328084, "km": 0.000001, "mi": 0.0000006214},
+                    "cm": {"mm": 10, "m": 0.01, "in": 0.393701, "ft": 0.0328084, "km": 0.00001, "mi": 0.000006214},
+                    "m": {"mm": 1000, "cm": 100, "in": 39.3701, "ft": 3.28084, "km": 0.001, "mi": 0.0006214},
+                    "km": {"mm": 1000000, "cm": 100000, "m": 1000, "in": 39370, "ft": 3281, "mi": 0.6214},
+                    "in": {"mm": 25.4, "cm": 2.54, "m": 0.0254, "ft": 0.0833333, "km": 0.0000254, "mi": 0.000015783},
+                    "ft": {"mm": 304.8, "cm": 30.48, "m": 0.3048, "in": 12, "km": 0.0003048, "mi": 0.0001894},
+                    "mi": {"mm": 1609344, "cm": 160934, "m": 1609.3, "in": 63360, "ft": 5280, "km": 1.6093}
+                }
+                if from_unit in factors and to_unit in factors[from_unit]:
+                    await ctx.send(str(round(value * factors[from_unit][to_unit], 4)) + f'{to_unit}')
+                else:
+                    await ctx.send('Syntax error')
+            else:
+                await ctx.send('Syntax error')
+
     @commands.cooldown(rate=1, per=float(config['options']['fact_cooldown']), bucket=commands.Bucket.member)
     @commands.command()
     async def fact(self, ctx: commands.Context):
