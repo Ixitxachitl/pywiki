@@ -884,7 +884,7 @@ class Bot(commands.Bot):
     async def unit(self, ctx: commands.Context, value="None", from_unit=None, to_unit=None):
         self.config.read(r'keys.ini')
         if self.config['options']['unit_enabled'] == 'True':
-            if value.isnumeric():
+            if value.replace('.', '', 1).isdigit():
                 value = float(value)
                 factors = {
                     "mm": {"cm": 0.1, "m": 0.001, "in": 0.0393701, "ft": 0.00328084, "km": 0.000001, "mi": 0.0000006214},
