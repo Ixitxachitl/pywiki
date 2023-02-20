@@ -14,7 +14,6 @@ Requirements:
 - pyttsx3
 - pycountry
 - py2snes
-- dateutil
 - Cinemagoer
 - BeautifulSoup
 - FuzzyWuzzy
