@@ -5,7 +5,7 @@ Run on windows if you want to use reddit, it uses a ctypes popup.
 Requirements:
 - twitchio
 - wikipedia
-- dateutil
+- python-dateutil
 - openai
 - pyowm
 - deep_translator
